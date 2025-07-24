@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ask a Code Question</title>
+</head>
+<body>
+    <h1>AI Code Mentor</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <label for="question">Your Question:</label><br>
+        <textarea name="question" rows="4" cols="60" required></textarea><br><br>
+
+        <label for="code">Relevant Code (optional):</label><br>
+        <textarea name="code" rows="10" cols="60"></textarea><br><br>
+
+        <button type="submit">Ask</button>
+    </form>
+</body>
+</html>
