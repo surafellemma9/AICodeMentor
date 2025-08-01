@@ -1,8 +1,6 @@
 AICodeMentor
 Phase 1 : Setup & Project Skeleton
 
-testing 
-
 Surafel123
 Same
 Fidel
@@ -26,3 +24,10 @@ Phase 5: Extra Features (Optional)
 Surafel
 Same
 Fidel
+
+
+LINK TO OPEN:
+http://127.0.0.1:8000/chatbot/
+
+Deepseek API key:
+sk-05794cd4e3b6446bb87462d970c2d1cc
