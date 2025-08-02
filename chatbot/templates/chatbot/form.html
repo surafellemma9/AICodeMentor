@@ -3,11 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>LeetAI – Your AI Code Mentor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #8b5cf6, #a855f7, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            color: #a1a1aa;
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        .form-card {
+            background: rgba(30, 30, 46, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #e4e4e7;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            background: rgba(15, 15, 35, 0.6);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            resize: vertical;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+            background: rgba(15, 15, 35, 0.8);
+        }
+
+        .input-field::placeholder {
+            color: #71717a;
+        }
+
+        textarea.input-field {
+            min-height: 200px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            line-height: 1.5;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(45deg, #8b5cf6, #a855f7);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .feature {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #e4e4e7;
+        }
+
+        .feature-desc {
+            color: #a1a1aa;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .form-card {
+                padding: 1.5rem;
+            }
+            
+            .logo {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🧠 LeetAI</div>
+            <div class="subtitle">Your AI-Powered Coding Mentor</div>
+        </div>
 
-    <h1> Hey guys</h1>
-    
+        <div class="form-card">
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="question">What's your coding problem?</label>
+                    <input 
+                        type="text" 
+                        id="question" 
+                        name="question" 
+                        class="input-field"
+                        placeholder="e.g., How do I implement a binary search tree? Why is my loop not ending? How can I optimize this algorithm?"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="code">Paste your code (optional):</label>
+                    <textarea 
+                        id="code" 
+                        name="code" 
+                        class="input-field"
+                        placeholder="// Paste your code here...
+// Python, Java, C++, JavaScript, or any language
+// I'll help you debug, optimize, or explain it!"
+                    ></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    🚀 Ask LeetAI for Guidance
+                </button>
+            </form>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🔍</div>
+                <div class="feature-title">Code Analysis</div>
+                <div class="feature-desc">Get detailed analysis of your code structure and logic</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">💡</div>
+                <div class="feature-title">Smart Solutions</div>
+                <div class="feature-desc">Receive optimized solutions with explanations</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">Step-by-Step</div>
+                <div class="feature-desc">Learn through guided problem-solving approach</div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
