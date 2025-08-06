@@ -1,1 +1,1 @@
-web: gunicorn LeetAI.wsgi
+web: gunicorn LeetAI.wsgi:application

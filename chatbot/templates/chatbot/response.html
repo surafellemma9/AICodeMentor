@@ -12,63 +12,69 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            color: #000000;
+            line-height: 1.47059;
+            font-weight: 400;
+            letter-spacing: -0.022em;
             min-height: 100vh;
-            color: #ffffff;
-            line-height: 1.6;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 980px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 0 22px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         .header {
             text-align: center;
             margin-bottom: 3rem;
-            padding: 2rem 0;
+            padding: 2rem 0 1rem;
         }
 
         .logo {
-            font-size: 3rem;
-            font-weight: bold;
-            background: linear-gradient(45deg, #8b5cf6, #a855f7, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 1rem;
+            font-size: 3.5rem;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.003em;
         }
 
         .subtitle {
-            color: #a1a1aa;
-            font-size: 1.2rem;
-            font-weight: 300;
+            color: #86868b;
+            font-size: 1.25rem;
+            font-weight: 400;
+            letter-spacing: -0.003em;
         }
 
-        .response-card {
-            background: rgba(30, 30, 46, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 20px;
+        .response-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 18px;
             padding: 2.5rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            margin-bottom: 2rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
 
         .response-header {
             display: flex;
             align-items: center;
             margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .ai-avatar {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(45deg, #8b5cf6, #a855f7);
+            width: 48px;
+            height: 48px;
+            background: #007aff;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -80,32 +86,36 @@
         .response-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #e4e4e7;
+            color: #000000;
+            letter-spacing: -0.003em;
         }
 
         .response-content {
-            background: rgba(15, 15, 35, 0.6);
-            border: 1px solid rgba(139, 92, 246, 0.2);
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             padding: 2rem;
             font-size: 1.1rem;
-            line-height: 1.8;
+            line-height: 1.6;
             white-space: pre-wrap;
             overflow-x: auto;
+            color: #000000;
+            letter-spacing: -0.003em;
         }
 
         .response-content code {
-            background: rgba(139, 92, 246, 0.1);
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            color: #c084fc;
+            background: rgba(0, 122, 255, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            color: #007aff;
+            font-size: 0.9rem;
         }
 
         .response-content pre {
-            background: rgba(15, 15, 35, 0.8);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
             padding: 1.5rem;
             overflow-x: auto;
             margin: 1rem 0;
@@ -114,14 +124,14 @@
         .response-content pre code {
             background: none;
             padding: 0;
-            color: #e4e4e7;
+            color: #000000;
         }
 
         .back-btn {
             display: inline-flex;
             align-items: center;
-            padding: 1rem 2rem;
-            background: linear-gradient(45deg, #8b5cf6, #a855f7);
+            padding: 1.25rem 2rem;
+            background: #007aff;
             border: none;
             border-radius: 12px;
             color: white;
@@ -130,36 +140,22 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            margin-top: 1rem;
+            margin-top: 2rem;
+            letter-spacing: -0.003em;
         }
 
         .back-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
+            background: #0056d6;
+            transform: translateY(-1px);
         }
 
         .back-btn:active {
             transform: translateY(0);
         }
 
-        .loading-animation {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(139, 92, 246, 0.3);
-            border-radius: 50%;
-            border-top-color: #8b5cf6;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 0.5rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
         .tips-section {
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.2);
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             padding: 1.5rem;
             margin-top: 2rem;
@@ -167,42 +163,45 @@
 
         .tips-title {
             font-weight: 600;
-            color: #e4e4e7;
+            color: #000000;
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
+            font-size: 1.2rem;
+            letter-spacing: -0.003em;
         }
 
         .tips-title::before {
             content: "💡";
-            margin-right: 0.5rem;
+            margin-right: 0.75rem;
         }
 
         .tips-list {
             list-style: none;
-            color: #a1a1aa;
+            color: #86868b;
         }
 
         .tips-list li {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             padding-left: 1.5rem;
             position: relative;
+            line-height: 1.5;
         }
 
         .tips-list li::before {
             content: "→";
             position: absolute;
             left: 0;
-            color: #8b5cf6;
+            color: #007aff;
         }
 
         @media (max-width: 768px) {
             .container {
-                padding: 1rem;
+                padding: 0 16px;
             }
             
-            .response-card {
-                padding: 1.5rem;
+            .response-container {
+                padding: 2rem;
             }
             
             .logo {
@@ -210,7 +209,7 @@
             }
             
             .response-content {
-                padding: 1rem;
+                padding: 1.5rem;
                 font-size: 1rem;
             }
         }
@@ -223,7 +222,7 @@
             <div class="subtitle">Your AI-Powered Coding Mentor</div>
         </div>
 
-        <div class="response-card">
+        <div class="response-container">
             <div class="response-header">
                 <div class="ai-avatar">🤖</div>
                 <div class="response-title">LeetAI's Response</div>
@@ -237,7 +236,7 @@
                 <div class="tips-title">Pro Tips</div>
                 <ul class="tips-list">
                     <li>Try asking follow-up questions for deeper explanations</li>
-                    <li>Share more code context for better analysis</li>
+                    <li>Upload code files for detailed analysis</li>
                     <li>Ask for multiple approaches to solve the same problem</li>
                     <li>Request time complexity analysis for optimization</li>
                 </ul>

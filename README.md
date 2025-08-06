@@ -32,4 +32,6 @@ http://127.0.0.1:8000/chatbot/
 Deepseek API key:
 sk-62d33e1ef9ba42a5a3a84d1f4ae2e95b
 
+OpenRouther API key:
+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
 
