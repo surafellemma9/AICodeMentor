@@ -30,4 +30,6 @@ LINK TO OPEN:
 http://127.0.0.1:8000/chatbot/
 
 Deepseek API key:
-sk-05794cd4e3b6446bb87462d970c2d1cc
+sk-62d33e1ef9ba42a5a3a84d1f4ae2e95b
+
+
