@@ -1,4 +1,3 @@
-# LeetAI/settings.py
 import os
 from pathlib import Path
 
@@ -11,15 +10,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- Security / Debug ---
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-insecure-only")
-DEBUG = "RENDER" not in os.environ  # False on Render if RENDER is set
+DEBUG = "RENDER" not in os.environ  # False in Render when RENDER is set
 
-# Hosts
+# --- Hosts / CSRF ---
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
-# CSRF for Render
 CSRF_TRUSTED_ORIGINS = []
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
@@ -52,8 +50,8 @@ ROOT_URLCONF = "LeetAI.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
-        "APP_DIRS": True,
+        "DIRS": [BASE_DIR / "templates"],  # optional project-level
+        "APP_DIRS": True,                  # enables app templates
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
