@@ -4,8 +4,7 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 
-def healthz(_request):  # returns 200 for Render health checks
-    return HttpResponse("ok")
+def healthz(_): return HttpResponse("ok")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
