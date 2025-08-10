@@ -7,13 +7,15 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
 
-def ping(_):  # sanity check
+def ping(_):
     return HttpResponse("chatbot pong")
 
 def form_view(request):
-    return render(request, "chatbot/form.html")  # shows your form
+    # Renders your existing template at chatbot/templates/chatbot/form.html
+    return render(request, "chatbot/form.html")
 
 def submit_chat(request):
+    # Handles the form POST; renders chatbot/response.html
     if request.method != "POST":
         return redirect("chatbot_home")
 
@@ -23,16 +25,19 @@ def submit_chat(request):
 
     api_key = settings.OPENROUTER_API_KEY
     if not api_key:
-        return render(request, "chatbot/response.html",
-                      {"question": question, "reply": "Server is missing OPENROUTER_API_KEY."})
+        return render(request, "chatbot/response.html", {
+            "question": question,
+            "reply": "Server is missing OPENROUTER_API_KEY."
+        })
 
     headers = {
         "Authorization": f"Bearer {api_key}",
+        # These two headers are recommended by OpenRouter
         "HTTP-Referer": os.environ.get("SITE_URL", "https://aicodementor.onrender.com"),
         "X-Title": "LeetAI",
     }
     payload = {
-        "model": "openai/gpt-4o-mini",  # pick any OpenRouter-supported model
+        "model": "openai/gpt-4o-mini",   # pick any OpenRouter-supported model
         "messages": [
             {"role": "system", "content": "You are a helpful coding mentor."},
             {"role": "user", "content": question},
@@ -43,7 +48,8 @@ def submit_chat(request):
         r = requests.post("https://openrouter.ai/api/v1/chat/completions",
                         headers=headers, json=payload, timeout=60)
         r.raise_for_status()
-        reply = r.json()["choices"][0]["message"]["content"]
+        data = r.json()
+        reply = data["choices"][0]["message"]["content"]
     except Exception as e:
         reply = f"Error contacting model: {e}"
 

@@ -9,8 +9,8 @@ def ping(_): return HttpResponse("pong")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("chatbot/", include("chatbot.urls")),
-    path("", RedirectView.as_view(url="/chatbot/", permanent=False)),
-    path("healthz/", healthz),
-    path("ping/", ping),
+    path("chatbot/", include("chatbot.urls")),      # all chatbot routes
+    path("healthz/", healthz),                      # for Render health checks
+    path("ping/", ping),                            # quick sanity check
+    path("", RedirectView.as_view(url="/chatbot/", permanent=False)),  # / -> /chatbot/
 ]
