@@ -1,14 +1,9 @@
-from django.contrib import admin
-from django.http import HttpResponse
-from django.urls import include, path
-from django.views.generic import RedirectView
+from django.urls import path
 
-
-def healthz(_): return HttpResponse("ok")
+from . import views
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("chatbot/", include("chatbot.urls")),
-    path("", RedirectView.as_view(url="/chatbot/", permanent=False)),
-    path("healthz/", healthz),
+    path("", views.index, name="chatbot_home"),
+    path("ping/", views.ping, name="chatbot_ping"),
+    path("api/chat/", views.chat_api, name="chat_api"),  # keep if you have it
 ]
