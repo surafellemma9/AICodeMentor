@@ -21,7 +21,7 @@ def submit_chat(request):
     api_key = settings.OPENROUTER_API_KEY
     if not api_key:
         return render(request, "chatbot/response.html",
-                      {"question": question, "reply": "Server is missing OPENROUTER_API_KEY."})
+                    {"question": question, "reply": "Server is missing OPENROUTER_API_KEY."})
 
     headers = {
         "Authorization": f"Bearer {api_key}",
