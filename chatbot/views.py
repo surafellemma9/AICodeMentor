@@ -10,6 +10,9 @@ from django.shortcuts import redirect, render
 def form_view(request):
     return render(request, "chatbot/form.html")
 
+def ping(_request):
+    return HttpResponse("chatbot pong")
+
 def submit_chat(request):
     if request.method != "POST":
         return redirect("chatbot_home")
