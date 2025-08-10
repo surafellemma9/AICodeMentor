@@ -1,7 +1,15 @@
-from django.urls import path
+from django.contrib import admin
+from django.http import HttpResponse
+from django.urls import include, path
+from django.views.generic import RedirectView
 
-from . import views
+
+def healthz(_request):  # returns 200 for Render health checks
+    return HttpResponse("ok")
 
 urlpatterns = [
-    path('', views.ask_question, name='ask_question'),
+    path("admin/", admin.site.urls),
+    path("chatbot/", include("chatbot.urls")),
+    path("", RedirectView.as_view(url="/chatbot/", permanent=False)),
+    path("healthz/", healthz),
 ]
