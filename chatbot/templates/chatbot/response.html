@@ -1,251 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LeetAI – Response</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background: #ffffff;
-            color: #000000;
-            line-height: 1.47059;
-            font-weight: 400;
-            letter-spacing: -0.022em;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 0 22px;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 3rem;
-            padding: 2rem 0 1rem;
-        }
-
-        .logo {
-            font-size: 3.5rem;
-            font-weight: 600;
-            color: #000000;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.003em;
-        }
-
-        .subtitle {
-            color: #86868b;
-            font-size: 1.25rem;
-            font-weight: 400;
-            letter-spacing: -0.003em;
-        }
-
-        .response-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: rgba(0, 0, 0, 0.05);
-            backdrop-filter: blur(20px);
-            border-radius: 18px;
-            padding: 2.5rem;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        .response-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .ai-avatar {
-            width: 48px;
-            height: 48px;
-            background: #007aff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-right: 1rem;
-        }
-
-        .response-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #000000;
-            letter-spacing: -0.003em;
-        }
-
-        .response-content {
-            background: rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            padding: 2rem;
-            font-size: 1.1rem;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            overflow-x: auto;
-            color: #000000;
-            letter-spacing: -0.003em;
-        }
-
-        .response-content code {
-            background: rgba(0, 122, 255, 0.1);
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-            color: #007aff;
-            font-size: 0.9rem;
-        }
-
-        .response-content pre {
-            background: rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            padding: 1.5rem;
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-
-        .response-content pre code {
-            background: none;
-            padding: 0;
-            color: #000000;
-        }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            padding: 1.25rem 2rem;
-            background: #007aff;
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            margin-top: 2rem;
-            letter-spacing: -0.003em;
-        }
-
-        .back-btn:hover {
-            background: #0056d6;
-            transform: translateY(-1px);
-        }
-
-        .back-btn:active {
-            transform: translateY(0);
-        }
-
-        .tips-section {
-            background: rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-top: 2rem;
-        }
-
-        .tips-title {
-            font-weight: 600;
-            color: #000000;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            font-size: 1.2rem;
-            letter-spacing: -0.003em;
-        }
-
-        .tips-title::before {
-            content: "💡";
-            margin-right: 0.75rem;
-        }
-
-        .tips-list {
-            list-style: none;
-            color: #86868b;
-        }
-
-        .tips-list li {
-            margin-bottom: 0.75rem;
-            padding-left: 1.5rem;
-            position: relative;
-            line-height: 1.5;
-        }
-
-        .tips-list li::before {
-            content: "→";
-            position: absolute;
-            left: 0;
-            color: #007aff;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 0 16px;
-            }
-            
-            .response-container {
-                padding: 2rem;
-            }
-            
-            .logo {
-                font-size: 2.5rem;
-            }
-            
-            .response-content {
-                padding: 1.5rem;
-                font-size: 1rem;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeetAI – Response</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue',Helvetica,Arial,sans-serif;background:#fff;color:#000;line-height:1.47;letter-spacing:-0.022em;min-height:100vh}
+    .container{max-width:980px;margin:0 auto;padding:0 22px;min-height:100vh}
+    .header{text-align:center;margin-bottom:3rem;padding:2rem 0 1rem}
+    .logo{font-size:3.5rem;font-weight:600;margin-bottom:.5rem}
+    .subtitle{color:#86868b;font-size:1.25rem}
+    .response-container{background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.1);border-radius:18px;padding:2.5rem;box-shadow:0 20px 40px rgba(0,0,0,.1)}
+    .response-header{display:flex;align-items:center;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(0,0,0,.1)}
+    .ai-avatar{width:48px;height:48px;background:#007aff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#fff;margin-right:1rem}
+    .response-title{font-size:1.5rem;font-weight:600}
+    .block{background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:1.25rem;margin:.75rem 0;white-space:pre-wrap}
+    .back-btn{display:inline-flex;align-items:center;padding:1rem 1.5rem;background:#007aff;border:none;border-radius:12px;color:#fff;font-weight:600;text-decoration:none;margin-top:1.5rem}
+    .back-btn:hover{background:#0056d6}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">🧠 LeetAI</div>
-            <div class="subtitle">Your AI-Powered Coding Mentor</div>
-        </div>
-
-        <div class="response-container">
-            <div class="response-header">
-                <div class="ai-avatar">🤖</div>
-                <div class="response-title">LeetAI's Response</div>
-            </div>
-
-            <div class="response-content">
-{{ response|linebreaks }}
-            </div>
-
-            <div class="tips-section">
-                <div class="tips-title">Pro Tips</div>
-                <ul class="tips-list">
-                    <li>Try asking follow-up questions for deeper explanations</li>
-                    <li>Upload code files for detailed analysis</li>
-                    <li>Ask for multiple approaches to solve the same problem</li>
-                    <li>Request time complexity analysis for optimization</li>
-                </ul>
-            </div>
-
-            <a href="{% url 'ask_question' %}" class="back-btn">
-                ← Ask Another Question
-            </a>
-        </div>
+<div class="container">
+    <div class="header">
+    <div class="logo">🧠 LeetAI</div>
+    <div class="subtitle">Your AI-Powered Coding Mentor</div>
     </div>
+
+    <div class="response-container">
+    <div class="response-header">
+        <div class="ai-avatar">🤖</div>
+        <div class="response-title">LeetAI’s Response</div>
+    </div>
+
+    <h3>Your question</h3>
+    <div class="block">{{ question }}</div>
+
+    <h3>Reply</h3>
+    <div class="block">{{ reply }}</div>
+
+    <a href="{% url 'chatbot_home' %}" class="back-btn">← Ask another question</a>
+    </div>
+</div>
 </body>
 </html>
