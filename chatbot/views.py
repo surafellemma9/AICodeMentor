@@ -97,4 +97,5 @@ def submit_chat(request):
         logger.exception("submit_chat failed")
         reply = f"Unexpected error contacting model: {e}"
 
-    return render(request, "chatbot/response.html", {"question": question, "reply": reply})
+    from django.http import HttpResponse
+    return HttpResponse(f"<h3>Q:</h3><pre>{question}</pre><h3>Reply:</h3><pre>{reply}</pre>")
