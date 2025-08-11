@@ -1,6 +1,8 @@
+# LeetAI/settings.py
 import os
 from pathlib import Path
 
+# Optional: database URL helper (works if installed)
 try:
     import dj_database_url
 except ImportError:
@@ -8,35 +10,42 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --- Security / Debug ---
+# ------------------------------------------------------------------------------
+# Core / Security
+# ------------------------------------------------------------------------------
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-insecure-only")
-DEBUG = "RENDER" not in os.environ  # False in Render when RENDER is set
+# On Render we set env var RENDER=true; that turns DEBUG off in prod.
+DEBUG = "RENDER" not in os.environ
 
-# --- Hosts / CSRF ---
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+# CSRF needs full scheme+host entries (no wildcards)
 CSRF_TRUSTED_ORIGINS = []
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 
-# --- Apps ---
+# ------------------------------------------------------------------------------
+# Apps / Middleware
+# ------------------------------------------------------------------------------
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
+    "django.contrib.messages",
+    # Important: put this BEFORE 'django.contrib.staticfiles'
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
-    "django.contrib.messages",
+    # your app
     "chatbot",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # static files in prod
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -50,8 +59,9 @@ ROOT_URLCONF = "LeetAI.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],  # optional project-level
-        "APP_DIRS": True,                  # enables app templates
+        # project-level templates if you ever add them:
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,  # loads app templates at app/templates/<app>/*
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -65,32 +75,93 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "LeetAI.wsgi.application"
 
-# --- Database ---
+# ------------------------------------------------------------------------------
+# Database
+# ------------------------------------------------------------------------------
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
+        "ENGINE": "django.db.backends.sqlite3",  # fine for simple deploys
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+# If DATABASE_URL is provided (e.g., Render PostgreSQL), use it:
 if dj_database_url:
     cfg = dj_database_url.config(conn_max_age=600, ssl_require=True)
     if cfg:
         DATABASES["default"].update(cfg)
 
-# --- Static (WhiteNoise) ---
+# ------------------------------------------------------------------------------
+# Internationalization
+# ------------------------------------------------------------------------------
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
+USE_I18N = True
+USE_TZ = True
+
+# ------------------------------------------------------------------------------
+# Static files (WhiteNoise)
+# ------------------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# Only include static folders that exist to avoid W004 warnings on Render
+static_candidates = [BASE_DIR / "static", BASE_DIR / "chatbot" / "static"]
+STATICFILES_DIRS = [p for p in static_candidates if p.exists()]
+
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# --- Prod security toggles ---
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ------------------------------------------------------------------------------
+# Production security toggles
+# ------------------------------------------------------------------------------
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    # Optional HSTS (enable once you’re confident)
+    # SECURE_HSTS_SECONDS = 3600
+    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # SECURE_HSTS_PRELOAD = True
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+# ------------------------------------------------------------------------------
+# App-specific / LLM provider settings (env-driven)
+# ------------------------------------------------------------------------------
+# Public site URL (used as Referer for OpenRouter); falls back to Render host if set
+SITE_URL = os.environ.get(
+    "SITE_URL",
+    f"https://{RENDER_EXTERNAL_HOSTNAME}" if RENDER_EXTERNAL_HOSTNAME else "http://localhost:8000",
+)
 
-# --- API keys (OpenRouter only) ---
+# Provider choice and model (your view can read these)
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openrouter")
+LLM_MODEL = os.environ.get("LLM_MODEL", "openai/gpt-4o-mini")
+
+# Keys for supported providers (set these in Render → Environment)
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY")
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
+
+# ------------------------------------------------------------------------------
+# Logging (surface errors in Render logs)
+# ------------------------------------------------------------------------------
+LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "django": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": True},
+        # Your app logs (e.g., chatbot.views logger calls)
+        "chatbot": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": True},
+    },
+}

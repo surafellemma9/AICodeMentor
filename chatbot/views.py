@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 
@@ -9,18 +8,50 @@ from django.shortcuts import redirect, render
 
 logger = logging.getLogger(__name__)
 
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL_ID = "openai/gpt-4o-mini"  # choose any OpenRouter-supported model
+# ----- Provider catalog (OpenAI-compatible chat/completions) -----
+PROVIDERS = {
+    # Current provider you used
+    "openrouter": {
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "key_env": "OPENROUTER_API_KEY",
+        "default_model": "openai/gpt-4o-mini",
+        "headers": lambda key, request: {
+            "Authorization": f"Bearer {key}",
+            # These two are recommended by OpenRouter
+            "HTTP-Referer": (request.build_absolute_uri("/") if request else settings.SITE_URL),
+            "X-Title": "LeetAI",
+        },
+    },
+    # Popular free/cheap option; usually OpenAI-compatible
+    "groq": {
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "key_env": "GROQ_API_KEY",
+        # Good default model name on Groq:
+        "default_model": "llama-3.1-70b-versatile",
+        "headers": lambda key, _request: {"Authorization": f"Bearer {key}"},
+    },
+    # Another OpenAI-compatible option
+    "together": {
+        "url": "https://api.together.xyz/v1/chat/completions",
+        "key_env": "TOGETHER_API_KEY",
+        # Example fast instruct model on Together (adjust as you like)
+        "default_model": "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+        "headers": lambda key, _request: {"Authorization": f"Bearer {key}"},
+    },
+}
 
-def ping(_request):
+# Choose provider via env var (LLM_PROVIDER=openrouter|groq|together)
+def _select_provider():
+    name = os.environ.get("LLM_PROVIDER", "openrouter").lower()
+    return name if name in PROVIDERS else "openrouter"
+
+def ping(_):
     return HttpResponse("chatbot pong")
 
 def form_view(request):
-    # Renders chatbot/templates/chatbot/form.html
     return render(request, "chatbot/form.html")
 
 def submit_chat(request):
-    # Handles POST and renders chatbot/response.html
     if request.method != "POST":
         return redirect("chatbot_home")
 
@@ -28,22 +59,29 @@ def submit_chat(request):
     if not question:
         return render(request, "chatbot/form.html", {"error": "Please enter a message."})
 
-    api_key = settings.OPENROUTER_API_KEY
-    if not api_key:
-        return render(request, "chatbot/response.html", {
-            "question": question,
-            "reply": "Server is missing OPENROUTER_API_KEY. Add it in Render → Environment."
-        })
+    provider_name = _select_provider()
+    p = PROVIDERS[provider_name]
+    key = os.environ.get(p["key_env"]) or getattr(settings, p["key_env"], None)
 
-    # Build a safe referer (avoid reversing any non-existent route names)
-    referer = request.build_absolute_uri("/")
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": referer,         # recommended by OpenRouter
-        "X-Title": "LeetAI",             # recommended by OpenRouter
-    }
+    if not key:
+        return render(
+            request,
+            "chatbot/response.html",
+            {
+                "question": question,
+                "reply": (
+                    f"{provider_name} API key is missing. "
+                    f"Set {p['key_env']} in Render → Environment."
+                ),
+            },
+        )
+
+    url = p["url"]
+    headers = p["headers"](key, request)
+    model = os.environ.get("LLM_MODEL", p["default_model"])
+
     payload = {
-        "model": MODEL_ID,
+        "model": model,
         "messages": [
             {"role": "system", "content": "You are a helpful coding mentor."},
             {"role": "user", "content": question},
@@ -51,36 +89,48 @@ def submit_chat(request):
     }
 
     try:
-        r = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=45)
+        r = requests.post(url, headers=headers, json=payload, timeout=45)
 
+        # Friendly auth/billing messages (codes vary across providers)
         if r.status_code in (401, 403):
-            return render(request, "chatbot/response.html", {
-                "question": question,
-                "reply": "OpenRouter API key is invalid or expired (401/403). Rotate the key and try again."
-            })
+            return render(
+                request,
+                "chatbot/response.html",
+                {
+                    "question": question,
+                    "reply": (
+                        f"{provider_name} rejected the key (HTTP {r.status_code}). "
+                        f"Verify the key and any domain/referrer settings."
+                    ),
+                },
+            )
         if r.status_code == 402:
-            return render(request, "chatbot/response.html", {
-                "question": question,
-                "reply": "OpenRouter returned 402 (billing required). Check your OpenRouter billing."
-            })
+            return render(
+                request,
+                "chatbot/response.html",
+                {
+                    "question": question,
+                    "reply": f"{provider_name} returned 402 (billing required).",
+                },
+            )
+
         if r.status_code >= 400:
-            body_text = r.text[:1000]
-            logger.error("OpenRouter error %s: %s", r.status_code, body_text)
+            # Log details for debugging; show concise message to user
+            body = r.text[:1200]
+            logger.error("%s error %s: %s", provider_name, r.status_code, body)
+            # Try to pull a message if JSON
             try:
-                err_json = r.json()
-                err_msg = (
-                    err_json.get("error", {}).get("message")
-                    or err_json.get("message")
-                    or body_text
-                )
+                msg = (r.json().get("error") or {}).get("message") or r.json().get("message") or body
             except Exception:
-                err_msg = body_text
-            return render(request, "chatbot/response.html", {
-                "question": question,
-                "reply": f"Upstream error {r.status_code}: {err_msg}"
-            })
+                msg = body
+            return render(
+                request,
+                "chatbot/response.html",
+                {"question": question, "reply": f"Upstream error {r.status_code}: {msg}"},
+            )
 
         data = r.json()
+        # OpenAI-compatible: choices[0].message.content or choices[0].text
         choice0 = (data.get("choices") or [{}])[0]
         reply = (choice0.get("message") or {}).get("content") or choice0.get("text") or ""
         reply = reply.strip() or "The model returned an empty reply."
