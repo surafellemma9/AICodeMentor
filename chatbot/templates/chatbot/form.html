@@ -1,110 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LeetAI – Your AI Coding Mentor</title>
-<style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue',Helvetica,Arial,sans-serif; background:#fff; color:#000; line-height:1.47059; letter-spacing:-0.022em; min-height:100vh; }
-    .container { max-width:980px; margin:0 auto; padding:0 22px; display:flex; flex-direction:column; min-height:100vh; }
-    .header { text-align:center; margin-bottom:4rem; padding:3rem 0 2rem; }
-    .logo { font-size:3.5rem; font-weight:600; margin-bottom:.5rem; }
-    .subtitle { color:#86868b; font-size:1.25rem; }
-    .chat-container { flex:1; display:flex; flex-direction:column; background:rgba(0,0,0,.05); backdrop-filter:blur(20px); border-radius:18px; padding:2.5rem; border:1px solid rgba(0,0,0,.1); box-shadow:0 20px 40px rgba(0,0,0,.1); }
-    .alert { background:#fff2f2; border:1px solid #ffd6d6; color:#7a0000; padding:.75rem 1rem; border-radius:10px; margin-bottom:1rem; }
-    .input-section { display:flex; flex-direction:column; gap:2rem; }
-    .text-input { width:100%; min-height:260px; padding:1.5rem; background:rgba(0,0,0,.05); border:1px solid rgba(0,0,0,.2); border-radius:12px; font-size:1.1rem; resize:vertical; transition:all .3s ease; }
-    .text-input:focus { outline:none; border-color:#007aff; background:rgba(0,0,0,.08); box-shadow:0 0 0 4px rgba(0,122,255,.2); }
-    .text-input::placeholder { color:#86868b; }
-    .file-upload-section { display:flex; flex-direction:column; gap:1rem; }
-    .file-input-wrapper { position:relative; display:inline-block; }
-    .file-input { position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; }
-    .file-input-label { display:flex; align-items:center; justify-content:center; gap:.75rem; padding:1.25rem 2rem; background:rgba(0,0,0,.05); border:1px solid rgba(0,0,0,.2); border-radius:12px; font-weight:500; cursor:pointer; transition:all .3s ease; }
-    .file-input-label:hover { background:rgba(0,0,0,.08); border-color:#007aff; }
-    .file-preview { margin-top:1rem; padding:1.25rem; background:rgba(0,0,0,.05); border:1px solid rgba(0,0,0,.1); border-radius:12px; display:none; }
-    .file-item { display:flex; align-items:center; gap:.75rem; padding:.75rem; background:rgba(0,0,0,.05); border-radius:8px; margin-bottom:.5rem; }
-    .file-name { flex:1; font-size:.95rem; }
-    .remove-file { background:none; border:none; color:#ff453a; cursor:pointer; font-size:1.2rem; padding:.25rem; border-radius:4px; }
-    .submit-btn { width:100%; padding:1.25rem 2rem; background:#007aff; border:none; border-radius:12px; color:#fff; font-size:1.2rem; font-weight:600; cursor:pointer; transition:all .3s ease; margin-top:1.5rem; }
-    .submit-btn:hover { background:#0056d6; transform:translateY(-1px); }
-    .submit-btn:disabled { opacity:.6; cursor:not-allowed; }
-    .loading { display:none; align-items:center; gap:.75rem; }
-    .spinner { width:20px; height:20px; border:2px solid rgba(255,255,255,.3); border-radius:50%; border-top-color:#fff; animation:spin 1s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    @media (max-width:768px){ .container{padding:0 16px;} .chat-container{padding:2rem;} .logo{font-size:2.5rem;} }
-</style>
+    <meta charset="UTF-8">
+    <title>LeetAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<div class="container">
-    <div class="header">
-    <div class="logo">🧠 LeetAI</div>
-    <div class="subtitle">Your AI-Powered Coding Mentor</div>
+<body class="bg-gray-900 text-gray-100 flex h-screen">
+    <!-- Sidebar -->
+    <div class="w-64 bg-gray-800 p-4 hidden md:flex flex-col">
+        <h1 class="text-xl font-bold mb-4">LeetAI</h1>
+        <button class="bg-gray-700 p-2 rounded mb-2">+ New Chat</button>
+        <div class="flex-1 overflow-y-auto">
+            <p class="text-gray-400">Recent chats</p>
+        </div>
     </div>
 
-    <div class="chat-container">
-    <form method="POST" action="{% url 'chatbot_submit' %}" enctype="multipart/form-data" id="chatForm">
-        {% csrf_token %}
-
-        {% if error %}<div class="alert">{{ error }}</div>{% endif %}
-
-        <div class="input-section">
-        <textarea
-            name="message"
-            class="text-input"
-            placeholder="Ask me anything about coding, algorithms, debugging, or share your code for analysis..."
-            required
-        ></textarea>
-
-        <div class="file-upload-section">
-            <div class="file-input-wrapper">
-            <input type="file" name="files" class="file-input" id="fileInput" multiple
-                    accept=".txt,.py,.js,.java,.cpp,.c,.html,.css,.json,.xml,.md,.jpg,.jpeg,.png,.gif,.pdf" />
-            <label for="fileInput" class="file-input-label">
-                <span>📁</span><span>Upload files or images</span>
-            </label>
+    <!-- Main Chat -->
+    <div class="flex-1 flex flex-col">
+        <div id="chat-window" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <!-- Example chat bubble -->
+            <div class="flex">
+                <div class="bg-gray-700 p-3 rounded-lg max-w-xl">Hello! How can I help?</div>
             </div>
-            <div class="file-preview" id="filePreview"><div id="fileList"></div></div>
+            <div class="flex justify-end">
+                <div class="bg-blue-600 p-3 rounded-lg max-w-xl">I need help with Django.</div>
+            </div>
         </div>
-        </div>
 
-        <button type="submit" class="submit-btn" id="submitBtn">
-        <span class="btn-text">Ask LeetAI</span>
-        <span class="loading"><div class="spinner"></div><span>Processing...</span></span>
-        </button>
-    </form>
+        <!-- Input box -->
+        <form method="post" action="{% url 'submit_chat' %}" class="p-4 bg-gray-800 flex">
+            {% csrf_token %}
+            <input name="message" placeholder="Send a message..." class="flex-1 bg-gray-700 p-3 rounded-lg focus:outline-none" />
+            <button type="submit" class="ml-2 px-4 py-2 bg-green-600 rounded-lg">Send</button>
+        </form>
     </div>
-
-    <div class="features" style="margin-top: 2rem;">
-    <!-- (keep your features as-is) -->
-    </div>
-</div>
-
-<script>
-    const fileInput = document.getElementById('fileInput');
-    const filePreview = document.getElementById('filePreview');
-    const fileList = document.getElementById('fileList');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = submitBtn.querySelector('.btn-text');
-    const loading = submitBtn.querySelector('.loading');
-
-    fileInput?.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) { filePreview.style.display = 'none'; return; }
-    filePreview.style.display = 'block';
-    fileList.innerHTML = '';
-    files.forEach((file) => {
-        const item = document.createElement('div'); item.className = 'file-item';
-        const name = document.createElement('span'); name.className = 'file-name'; name.textContent = file.name;
-        const x = document.createElement('button'); x.type='button'; x.className='remove-file'; x.textContent='×';
-        x.onclick = () => { item.remove(); if (!fileList.children.length) filePreview.style.display='none'; };
-        item.appendChild(name); item.appendChild(x); fileList.appendChild(item);
-    });
-    });
-
-    document.getElementById('chatForm').addEventListener('submit', () => {
-    submitBtn.disabled = true; btnText.style.display = 'none'; loading.style.display = 'flex';
-    });
-</script>
 </body>
 </html>
