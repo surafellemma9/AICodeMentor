@@ -96,6 +96,11 @@ def chat_page(request):
     messages = _get_messages_from_session(request)
     return render(request, "chatbot/chat.html", {"messages": messages})
 
+def new_chat(request):
+    request.session["messages"] = []
+    request.session.modified = True
+    return redirect("chatbot:chatbot_home")
+
 
 # ---------- Legacy simple form (optional) ----------
 def form_view(request):
