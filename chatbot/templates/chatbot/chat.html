@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}LeetAI Chat{% endblock %}
+
+{% block body %}
+<div class="h-full flex">
+  <!-- Sidebar -->
+  <aside id="sidebar"
+         class="hidden md:flex w-72 shrink-0 flex-col border-r border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/50 backdrop-blur">
+    <div class="p-3 border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-2">
+      <button id="newChat"
+              class="w-full inline-flex items-center justify-center rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800">
+        + New chat
+      </button>
+      <button id="themeToggle"
+              class="rounded-lg border border-neutral-300 dark:border-neutral-700 px-2 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              title="Toggle theme">☾</button>
+    </div>
+
+    <!-- Conversations list (examples) -->
+    <nav id="convoList" class="flex-1 overflow-y-auto p-2 space-y-1">
+      <!-- Render your past convos here -->
+      <a href="#" class="block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800">Getting started</a>
+    </nav>
+
+    <div class="p-3 text-xs text-neutral-500 border-t border-neutral-200 dark:border-neutral-800">
+      LeetAI • {{ request.user.username|default:"guest" }}
+    </div>
+  </aside>
+
+  <!-- Main Chat Pane -->
+  <main class="min-w-0 flex-1 flex flex-col">
+    <!-- Top bar (mobile toggles) -->
+    <header class="md:hidden flex items-center justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800 px-3 py-2 bg-white/70 dark:bg-neutral-900/50 backdrop-blur">
+      <button id="openSidebar" class="rounded-md border px-2 py-1 text-sm border-neutral-300 dark:border-neutral-700">☰</button>
+      <div class="font-medium">LeetAI</div>
+      <button id="themeToggleMobile" class="rounded-md border px-2 py-1 text-sm border-neutral-300 dark:border-neutral-700">☾</button>
+    </header>
+
+    <!-- Messages -->
+    <section id="chatScroll"
+             class="flex-1 overflow-y-auto px-3 md:px-6 py-4 md:py-6 space-y-3">
+      {# Example: if you pass messages=[{role:"assistant"|"user", content:"..."}] #}
+      {% for m in messages %}
+        {% if m.role == "assistant" %}
+          <article class="flex gap-3 items-start">
+            <div class="h-8 w-8 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center shrink-0">🤖</div>
+            <div class="max-w-[75ch] prose prose-neutral dark:prose-invert prose-pre:bg-neutral-900 prose-pre:text-neutral-100 prose-pre:rounded-lg">
+              {{ m.content|safe }}
+            </div>
+          </article>
+        {% else %}
+          <article class="flex gap-3 items-start justify-end">
+            <div class="max-w-[75ch] rounded-2xl bg-blue-600 text-white px-4 py-2 whitespace-pre-wrap">
+              {{ m.content }}
+            </div>
+            <div class="h-8 w-8 rounded bg-blue-200 text-blue-900 flex items-center justify-center shrink-0">🧑</div>
+          </article>
+        {% endif %}
+      {% empty %}
+        <div class="mx-auto text-center text-neutral-500 pt-12">
+          Start a conversation with LeetAI.
+        </div>
+      {% endfor %}
+
+      <!-- Typing indicator (hidden by default) -->
+      <div id="typing" class="hidden flex gap-3 items-center">
+        <div class="h-8 w-8 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center shrink-0">🤖</div>
+        <div class="inline-flex items-center gap-1 px-3 py-2 rounded-2xl bg-neutral-200 dark:bg-neutral-800">
+          <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce [animation-delay:-0.2s]"></span>
+          <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce"></span>
+          <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce [animation-delay:0.2s]"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Composer -->
+    <form id="composer" class="sticky bottom-0 left-0 right-0 px-3 md:px-6 pb-4 md:pb-6 pt-2 bg-gradient-to-t from-white/90 to-white/30 dark:from-neutral-950/90 dark:to-neutral-950/30 backdrop-blur"
+          action="{% url 'chatbot:ask' %}" method="post">
+      {% csrf_token %}
+      <div class="mx-auto max-w-3xl">
+        <div class="rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
+          <textarea id="msg"
+                    name="message"
+                    rows="1"
+                    placeholder="Message LeetAI…"
+                    class="w-full resize-none bg-transparent px-4 py-3 outline-none text-[15px] leading-6 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"></textarea>
+          <div class="flex items-center justify-between px-2 py-2 border-t border-neutral-200 dark:border-neutral-800">
+            <div class="flex items-center gap-2">
+              <button type="button" id="attach"
+                      class="text-sm px-2 py-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800">＋</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" id="stopBtn"
+                      class="hidden text-sm rounded-md border px-3 py-1.5 border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800">
+                Stop
+              </button>
+              <button type="submit"
+                      class="text-sm rounded-md bg-blue-600 text-white px-4 py-1.5 hover:bg-blue-700">
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="mt-2 text-xs text-neutral-500">Shift+Enter for newline • Enter to send</p>
+      </div>
+    </form>
+  </main>
+</div>
+
+<!-- Minimal JS for auto-resize, autoscroll, and fetch-submit -->
+<script>
+  const elScroll = document.getElementById('chatScroll');
+  const elForm   = document.getElementById('composer');
+  const elText   = document.getElementById('msg');
+  const elTyping = document.getElementById('typing');
+  const themeBtns = [document.getElementById('themeToggle'), document.getElementById('themeToggleMobile')].filter(Boolean);
+
+  function scrollToBottom() {
+    requestAnimationFrame(() => { elScroll.scrollTop = elScroll.scrollHeight; });
+  }
+  scrollToBottom();
+
+  // Auto-resize textarea + send on Enter (Shift+Enter = newline)
+  elText.addEventListener('input', () => {
+    elText.style.height = 'auto';
+    elText.style.height = Math.min(elText.scrollHeight, 200) + 'px';
+  });
+  elText.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      elForm.requestSubmit();
+    }
+  });
+
+  // Optional: AJAX submit to keep page smooth (expects your Django view returns JSON)
+  elForm.addEventListener('submit', async (e) => {
+    // If your current view expects a normal POST->redirect, remove this whole handler
+    e.preventDefault();
+    const text = elText.value.trim();
+    if (!text) return;
+
+    // Append user bubble
+    appendUser(text);
+    elText.value = '';
+    elText.style.height = 'auto';
+    scrollToBottom();
+
+    // Show typing dots
+    elTyping.classList.remove('hidden');
+
+    try {
+      // Adjust URL to your API endpoint returning: { reply_html: "<p>...</p>" }
+      const res = await fetch("{% url 'chatbot:ask' %}", {
+        method: "POST",
+        headers: {"X-Requested-With":"XMLHttpRequest", "Content-Type":"application/json", "X-CSRFToken": "{{ csrf_token }}"},
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json();
+      appendAssistant(data.reply_html || "Sorry, no response.");
+    } catch (err) {
+      appendAssistant("⚠️ Error contacting server.");
+      console.error(err);
+    } finally {
+      elTyping.classList.add('hidden');
+      scrollToBottom();
+    }
+  });
+
+  function appendUser(text) {
+    const wrapper = document.createElement('article');
+    wrapper.className = "flex gap-3 items-start justify-end";
+    wrapper.innerHTML = `
+      <div class="max-w-[75ch] rounded-2xl bg-blue-600 text-white px-4 py-2 whitespace-pre-wrap"></div>
+      <div class="h-8 w-8 rounded bg-blue-200 text-blue-900 flex items-center justify-center shrink-0">🧑</div>
+    `;
+    wrapper.querySelector('div').textContent = text;
+    elScroll.appendChild(wrapper);
+  }
+
+  function appendAssistant(html) {
+    const wrapper = document.createElement('article');
+    wrapper.className = "flex gap-3 items-start";
+    wrapper.innerHTML = `
+      <div class="h-8 w-8 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center shrink-0">🤖</div>
+      <div class="max-w-[75ch] prose prose-neutral dark:prose-invert prose-pre:bg-neutral-900 prose-pre:text-neutral-100 prose-pre:rounded-lg">${html}</div>
+    `;
+    elScroll.appendChild(wrapper);
+  }
+
+  // Sidebar (mobile)
+  const openSidebar = document.getElementById('openSidebar');
+  const sidebar = document.getElementById('sidebar');
+  openSidebar?.addEventListener('click', () => sidebar?.classList.toggle('hidden'));
+
+  // Theme toggle
+  function toggleTheme() {
+    const root = document.documentElement;
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem("leetai-theme", root.dataset.theme);
+  }
+  themeBtns.forEach(b => b.addEventListener('click', toggleTheme));
+</script>
+{% endblock %}

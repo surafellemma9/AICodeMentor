@@ -23,7 +23,10 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # CSRF needs full scheme+host entries (no wildcards)
-CSRF_TRUSTED_ORIGINS = []
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+]
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 
@@ -36,16 +39,28 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+
+    # Tailwind integration (safe before theme exists)
+    "tailwind",
+    # DO NOT add "theme" yet — run `manage.py tailwind init` first, then add it.
+    "theme",
+
     # Important: put this BEFORE 'django.contrib.staticfiles'
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
+
     # your app
     "chatbot",
 ]
 
+# Tailwind settings
+TAILWIND_APP_NAME = "theme"
+# If npm isn't found automatically, set this path (Mac Homebrew default shown)
+# NPM_BIN_PATH = "/opt/homebrew/bin/npm"  # or "/usr/local/bin/npm" on Intel Macs
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # static files in prod
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # must be right after SecurityMiddleware
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -59,7 +74,7 @@ ROOT_URLCONF = "LeetAI.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        # project-level templates if you ever add them:
+        # project-level templates
         "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,  # loads app templates at app/templates/<app>/*
         "OPTIONS": {
@@ -129,17 +144,14 @@ if not DEBUG:
 # ------------------------------------------------------------------------------
 # App-specific / LLM provider settings (env-driven)
 # ------------------------------------------------------------------------------
-# Public site URL (used as Referer for OpenRouter); falls back to Render host if set
 SITE_URL = os.environ.get(
     "SITE_URL",
     f"https://{RENDER_EXTERNAL_HOSTNAME}" if RENDER_EXTERNAL_HOSTNAME else "http://localhost:8000",
 )
 
-# Provider choice and model (your view can read these)
 LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openrouter")
 LLM_MODEL = os.environ.get("LLM_MODEL", "openai/gpt-4o-mini")
 
-# Keys for supported providers (set these in Render → Environment)
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY")
@@ -161,7 +173,6 @@ LOGGING = {
     },
     "loggers": {
         "django": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": True},
-        # Your app logs (e.g., chatbot.views logger calls)
         "chatbot": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": True},
     },
 }

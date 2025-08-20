@@ -2,9 +2,12 @@ from django.urls import path
 
 from . import views
 
+app_name = "chatbot"
+
 urlpatterns = [
-    path("", views.form_view, name="chatbot_home"),
-    path("submit/", views.submit_chat, name="chatbot_submit"),
-    path("ping/", views.ping, name="chatbot_ping"),
-    path("diag/", views.diag, name="chatbot_diag"),   # <— add this
+    path("", views.chat_page, name="chat"),         # ChatGPT-style page
+    path("ask/", views.submit_chat, name="ask"),    # POST endpoint (form or AJAX)
+    path("form/", views.form_view, name="form"),    # optional legacy
+    path("ping/", views.ping, name="ping"),
+    path("diag/", views.diag, name="diag"),
 ]

@@ -1,4 +1,5 @@
 # chatbot/views.py
+import json
 import logging
 import os
 
@@ -6,6 +7,7 @@ import requests
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.utils.html import escape
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,7 @@ PROVIDERS = {
     "groq": {
         "url": "https://api.groq.com/openai/v1/chat/completions",
         "key_env": "GROQ_API_KEY",
+        # You can override via env LLM_MODEL if this default changes.
         "default_model": "llama-3.1-70b-versatile",
         "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
     },
@@ -29,7 +32,7 @@ PROVIDERS = {
         "default_model": "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
         "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
     },
-    # Optional: keep OpenRouter available for easy switching
+    # Optional: OpenRouter for easy switching
     "openrouter": {
         "url": "https://openrouter.ai/api/v1/chat/completions",
         "key_env": "OPENROUTER_API_KEY",
@@ -42,92 +45,132 @@ PROVIDERS = {
     },
 }
 
+
 def _select_provider() -> str:
     """Pick provider via env; default to deepseek."""
     name = os.environ.get("LLM_PROVIDER", "deepseek").lower()
     return name if name in PROVIDERS else "deepseek"
+
 
 def _get_api_key(var_name: str) -> str:
     """Read API key from env/settings and strip stray whitespace/newlines/quotes."""
     raw = os.environ.get(var_name) or getattr(settings, var_name, None) or ""
     return str(raw).strip().strip('"').strip("'")
 
+
+def _get_messages_from_session(request):
+    """Fetch running chat transcript from session."""
+    return request.session.setdefault("messages", [])
+
+
+def _append_message(request, role: str, content: str):
+    msgs = _get_messages_from_session(request)
+    msgs.append({"role": role, "content": content})
+    request.session.modified = True
+
+
 def ping(_request):
     return HttpResponse("chatbot pong")
+
 
 def diag(request):
     """Quick diagnostics: which provider/model and whether a key is present."""
     name = _select_provider()
     p = PROVIDERS[name]
     key_ok = bool(_get_api_key(p["key_env"]))
-    return JsonResponse({
-        "provider": name,
-        "model": os.environ.get("LLM_MODEL", p["default_model"]),
-        "has_api_key": key_ok,
-    })
+    return JsonResponse(
+        {
+            "provider": name,
+            "model": os.environ.get("LLM_MODEL", p["default_model"]),
+            "has_api_key": key_ok,
+        }
+    )
 
+
+# ---------- ChatGPT-style page ----------
+def chat_page(request):
+    """
+    Render the main chat page with the running transcript.
+    Template: templates/chatbot/chat.html
+    """
+    messages = _get_messages_from_session(request)
+    return render(request, "chatbot/chat.html", {"messages": messages})
+
+
+# ---------- Legacy simple form (optional) ----------
 def form_view(request):
     return render(request, "chatbot/form.html")
 
-def submit_chat(request):
-    if request.method != "POST":
-        return redirect("chatbot_home")
 
-    question = (request.POST.get("message") or "").strip()
+# ---------- Send message to model ----------
+def submit_chat(request):
+    """
+    Handles both:
+      - Standard form POST (message in request.POST['message']) -> redirect back to chat page
+      - AJAX POST with JSON body {"message": "..."} -> returns JSON {"reply_html": "..."}
+    Keeps a running transcript in session for the ChatGPT-like UI.
+    """
+    if request.method != "POST":
+        return redirect("chatbot:chat")  # make sure your urls.py names this route
+
+    # Detect AJAX
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+    # Read message from POST or JSON
+    question = ""
+    if request.content_type and "application/json" in request.content_type:
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+            question = (payload.get("message") or "").strip()
+        except Exception:
+            question = ""
     if not question:
-        return render(request, "chatbot/form.html", {"error": "Please enter a message."})
+        question = (request.POST.get("message") or "").strip()
+
+    if not question:
+        if is_ajax:
+            return JsonResponse({"error": "Please enter a message."}, status=400)
+        _append_message(request, "assistant", "Please enter a message.")
+        return redirect("chatbot:chat")
+
+    # Add user message to transcript
+    _append_message(request, "user", question)
 
     provider_name = _select_provider()
     p = PROVIDERS[provider_name]
 
     key = _get_api_key(p["key_env"])
     if not key:
-        return render(
-            request,
-            "chatbot/response.html",
-            {
-                "question": question,
-                "reply": f"{provider_name} API key is missing. Set {p['key_env']} in Render → Environment.",
-            },
-        )
+        reply = f"{provider_name} API key is missing. Set {p['key_env']} in Render → Environment."
+        _append_message(request, "assistant", reply)
+        if is_ajax:
+            return JsonResponse({"reply_html": escape(reply).replace("\n", "<br>")})
+        return redirect("chatbot:chat")
 
     url = p["url"]
     headers = p["headers"](key, request)
-    headers["Content-Type"] = "application/json"  # ensure JSON content-type
+    headers["Content-Type"] = "application/json"
     model = (os.environ.get("LLM_MODEL") or p["default_model"]).strip()
+
+    # Compose OpenAI-compatible payload with transcript context (last ~20 messages)
+    transcript = _get_messages_from_session(request)[-20:]
+    # Ensure system prompt appears first
+    messages_payload = [{"role": "system", "content": "You are a helpful coding mentor."}] + transcript
 
     payload = {
         "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a helpful coding mentor."},
-            {"role": "user", "content": question},
-        ],
+        "messages": messages_payload,
     }
 
     try:
-        r = requests.post(url, headers=headers, json=payload, timeout=45)
+        r = requests.post(url, headers=headers, json=payload, timeout=60)
 
-        # Auth/billing handling (codes vary by provider)
+        # Auth/billing handling
         if r.status_code in (401, 403):
-            return render(
-                request,
-                "chatbot/response.html",
-                {
-                    "question": question,
-                    "reply": (
-                        f"{provider_name} rejected the key (HTTP {r.status_code}). "
-                        f"Verify the key value and any referer/domain settings."
-                    ),
-                },
-            )
-        if r.status_code == 402:
-            return render(
-                request,
-                "chatbot/response.html",
-                {"question": question, "reply": f"{provider_name} returned 402 (billing required)."},
-            )
-
-        if r.status_code >= 400:
+            reply = f"{provider_name} rejected the key (HTTP {r.status_code}). Verify the key and referer/domain settings."
+        elif r.status_code == 402:
+            reply = f"{provider_name} returned 402 (billing required)."
+        elif r.status_code >= 400:
             body = r.text[:1200]
             logger.error("%s error %s: %s", provider_name, r.status_code, body)
             try:
@@ -135,23 +178,25 @@ def submit_chat(request):
                 msg = (j.get("error") or {}).get("message") or j.get("message") or body
             except Exception:
                 msg = body
-            return render(
-                request,
-                "chatbot/response.html",
-                {"question": question, "reply": f"Upstream error {r.status_code}: {msg}"},
-            )
-
-        data = r.json()
-        # OpenAI-compatible: choices[0].message.content or choices[0].text
-        choice0 = (data.get("choices") or [{}])[0]
-        reply = (choice0.get("message") or {}).get("content") or choice0.get("text") or ""
-        reply = (reply or "").strip() or "The model returned an empty reply."
+            reply = f"Upstream error {r.status_code}: {msg}"
+        else:
+            data = r.json()
+            choice0 = (data.get("choices") or [{}])[0]
+            reply = (choice0.get("message") or {}).get("content") or choice0.get("text") or ""
+            reply = (reply or "").strip() or "The model returned an empty reply."
 
     except requests.Timeout:
         reply = "The model request timed out. Please try again."
     except Exception:
-        # Log full stack without exposing secrets to the user
         logger.exception("submit_chat failed (provider=%s)", provider_name)
         reply = "Unexpected error contacting model. Please try again."
 
-    return render(request, "chatbot/response.html", {"question": question, "reply": reply})
+    # Add assistant reply to transcript
+    _append_message(request, "assistant", reply)
+
+    if is_ajax:
+        # Return simple HTML (you can switch to Markdown->HTML if desired)
+        return JsonResponse({"reply_html": escape(reply).replace("\n", "<br>")})
+
+    # Non-AJAX: go back to the chat page which will render the transcript
+    return redirect("chatbot:chat")

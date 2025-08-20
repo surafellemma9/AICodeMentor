@@ -1,0 +1,20 @@
+{% load tailwind_tags %}
+<!doctype html>
+<html lang="en" class="h-full antialiased" data-theme="light">
+<head>
+<meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}LeetAI{% endblock %}</title>
+  {% tailwind_css %}
+  <script>
+    // simple dark mode toggle (persists)
+    (function () {
+      const saved = localStorage.getItem("leetai-theme");
+      if (saved) document.documentElement.dataset.theme = saved;
+    })();
+  </script>
+</head>
+<body class="h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+  {% block body %}{% endblock %}
+</body>
+</html>
