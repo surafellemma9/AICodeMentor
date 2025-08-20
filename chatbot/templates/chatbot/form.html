@@ -1,38 +1,50 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>LeetAI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeetAI Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 flex h-screen">
-    <!-- Sidebar -->
-    <div class="w-64 bg-gray-800 p-4 hidden md:flex flex-col">
-        <h1 class="text-xl font-bold mb-4">LeetAI</h1>
-        <button class="bg-gray-700 p-2 rounded mb-2">+ New Chat</button>
-        <div class="flex-1 overflow-y-auto">
-            <p class="text-gray-400">Recent chats</p>
-        </div>
-    </div>
+<body class="bg-gray-100 flex flex-col h-screen">
 
-    <!-- Main Chat -->
-    <div class="flex-1 flex flex-col">
-        <div id="chat-window" class="flex-1 overflow-y-auto p-6 space-y-4">
-            <!-- Example chat bubble -->
-            <div class="flex">
-                <div class="bg-gray-700 p-3 rounded-lg max-w-xl">Hello! How can I help?</div>
-            </div>
-            <div class="flex justify-end">
-                <div class="bg-blue-600 p-3 rounded-lg max-w-xl">I need help with Django.</div>
-            </div>
-        </div>
+  <!-- Header -->
+  <header class="bg-white shadow px-4 py-3">
+    <h1 class="text-xl font-semibold">LeetAI 💻</h1>
+  </header>
 
-        <!-- Input box -->
-        <form method="post" action="{% url 'submit_chat' %}" class="p-4 bg-gray-800 flex">
-            {% csrf_token %}
-            <input name="message" placeholder="Send a message..." class="flex-1 bg-gray-700 p-3 rounded-lg focus:outline-none" />
-            <button type="submit" class="ml-2 px-4 py-2 bg-green-600 rounded-lg">Send</button>
-        </form>
+  <!-- Chat area -->
+  <main id="chat-window" class="flex-1 overflow-y-auto p-6 space-y-4">
+    <!-- Example placeholder messages -->
+    <div class="flex">
+      <div class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg max-w-lg">
+        Hi! I’m your coding mentor. Ask me anything 🚀
+      </div>
     </div>
+    {% if error %}
+    <div class="text-red-500">{{ error }}</div>
+    {% endif %}
+  </main>
+
+  <!-- Fixed input area -->
+  <footer class="bg-white border-t px-4 py-3">
+    <form action="{% url 'chatbot:ask' %}" method="post" class="flex space-x-2">
+      {% csrf_token %}
+      <input
+        type="text"
+        name="message"
+        placeholder="Send a message..."
+        class="flex-1 rounded-lg border px-3 py-2 focus:outline-none focus:ring focus:border-blue-400"
+      >
+      <button
+        type="submit"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+      >
+        Send
+      </button>
+    </form>
+  </footer>
+
 </body>
 </html>
