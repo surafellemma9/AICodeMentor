@@ -111,8 +111,8 @@ def form_view(request):
 def submit_chat(request):
     """
     Handles both:
-      - Standard form POST (message in request.POST['message']) -> redirect back to chat page
-      - AJAX POST with JSON body {"message": "..."} -> returns JSON {"reply_html": "..."}
+    - Standard form POST (message in request.POST['message']) -> redirect back to chat page
+    - AJAX POST with JSON body {"message": "..."} -> returns JSON {"reply_html": "..."}
     Keeps a running transcript in session for the ChatGPT-like UI.
     """
     if request.method != "POST":
