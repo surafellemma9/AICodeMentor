@@ -80,18 +80,30 @@
               {% endif %}
             {% endfor %}
           {% else %}
-            <!-- Empty state you asked for -->
+            <!-- Empty state -->
             <div class="min-h-[50vh] flex items-center justify-center">
               <form id="landingForm" action="{% url 'chatbot:ask' %}" method="post" class="w-full max-w-2xl px-4">
                 {% csrf_token %}
+
+                <!-- Title ABOVE the input row -->
                 <h1 class="text-center text-xl font-semibold text-neutral-200 mb-4">CodeMentorAI</h1>
+
+                <!-- ORIGINAL input row (unchanged) -->
                 <div class="flex items-center gap-2">
-                  <input ... />
-                  <button ...>Send</button>
+                  <input
+                    id="landingInput"
+                    type="text"
+                    name="message"
+                    placeholder="How can I help today?"
+                    class="flex-1 rounded-full bg-surface-card border border-surface-border px-6 py-4 text-[15px] placeholder:text-neutral-400 outline-none focus:border-blue-500"
+                  />
+                  <button type="submit" class="rounded-full bg-blue-600 text-white px-5 py-3 text-sm hover:bg-blue-700">
+                    Send
+                  </button>
                 </div>
+
                 <p class="mt-3 text-xs text-neutral-500 text-center">Tip: Press Enter to send • Shift+Enter for newline</p>
               </form>
-              
             </div>
           {% endif %}
 
@@ -112,6 +124,10 @@
             class="{% if not messages or messages|length == 0 %}hidden{% endif %} sticky bottom-0 left-0 right-0 px-3 md:px-6 pb-5 pt-3 border-t border-surface-border bg-gradient-to-t from-surface to-surface/60 backdrop-blur">
         {% csrf_token %}
         <div class="mx-auto max-w-chat">
+
+          <!-- Title ABOVE the composer box -->
+          <h1 class="text-center text-xl font-semibold text-neutral-200 mb-3">CodeMentorAI</h1>
+
           <div class="rounded-2xl border border-surface-border bg-surface-card shadow-card">
             <textarea id="msg" name="message" rows="1" placeholder="Message LeetAI…"
                       class="w-full resize-none bg-transparent px-4 py-3 outline-none text-[15px] leading-6 placeholder:text-neutral-500"></textarea>
