@@ -25,6 +25,7 @@
     pre { background:#0e0f12; border:1px solid #26272d; border-radius:.75rem; padding:.9rem 1rem; overflow:auto }
     code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace }
     #scroll { scroll-behavior:smooth }
+    .mic-on { box-shadow: 0 0 0 3px rgba(239,68,68,.35); }
   </style>
 </head>
 
@@ -82,7 +83,7 @@
 
                 <h1 id="titleLanding" class="cm-title text-center text-xl font-semibold text-white mb-4">CodeMentorAI</h1>
 
-                <!-- Single box with textarea + plus + send -->
+                <!-- Single box with textarea + plus + mic + send -->
                 <div class="relative rounded-2xl border cm-border border-surface-border cm-card bg-surface-card shadow-card">
                   <!-- Hidden file input -->
                   <input id="landingFiles" type="file" class="hidden" multiple accept="image/*,.pdf,.txt,.md,.py,.js,.ts,.json,.csv,.zip" />
@@ -90,7 +91,7 @@
                   <!-- Attachments preview -->
                   <div id="landingPreview" class="hidden px-3 pt-3 flex flex-wrap gap-2"></div>
 
-                  <div class="pl-12 pr-20">
+                  <div class="pl-12 pr-32">
                     <textarea
                       id="landingInput"
                       name="message"
@@ -103,7 +104,12 @@
                   <!-- plus button (left) -->
                   <button type="button" id="landingPlus"
                           class="absolute left-3 top-3 inline-flex items-center justify-center h-9 w-9 rounded-full border cm-border border-surface-border hover:bg-surface/70"
-                          title="Add files">＋</button>
+                          title="Add files" aria-label="Add files">＋</button>
+
+                  <!-- mic button (inside, right next to Send) -->
+                  <button type="button" id="landingMic"
+                          class="absolute right-24 bottom-3 inline-flex items-center justify-center h-10 w-10 rounded-full border cm-border border-surface-border hover:bg-surface/70"
+                          title="Speak" aria-pressed="false" aria-label="Voice input">🎤</button>
 
                   <!-- Send button (inside) -->
                   <button type="submit"
@@ -142,7 +148,7 @@
             <!-- Previews -->
             <div id="composerPreview" class="hidden px-3 pt-3 flex flex-wrap gap-2"></div>
 
-            <div class="pl-12 pr-20">
+            <div class="pl-12 pr-32">
               <textarea id="msg" name="message" rows="1" placeholder="Message LeetAI…"
                         class="cm-input w-full resize-none bg-transparent px-4 py-3 outline-none text-[15px] leading-6 placeholder:text-neutral-500 text-white"></textarea>
             </div>
@@ -150,7 +156,12 @@
             <!-- plus button -->
             <button type="button" id="composerPlus"
                     class="absolute left-3 top-2.5 inline-flex items-center justify-center h-9 w-9 rounded-full border cm-border border-surface-border hover:bg-surface/70"
-                    title="Add files">＋</button>
+                    title="Add files" aria-label="Add files">＋</button>
+
+            <!-- mic button -->
+            <button type="button" id="composerMic"
+                    class="absolute right-24 bottom-2.5 inline-flex items-center justify-center h-10 w-10 rounded-full border cm-border border-surface-border hover:bg-surface/70"
+                    title="Speak" aria-pressed="false" aria-label="Voice input">🎤</button>
 
             <!-- Send inside -->
             <button type="submit"
@@ -179,7 +190,7 @@
     const openSb    = document.getElementById('openSidebar');
     const tBtns     = [document.getElementById('toggleTheme'), document.getElementById('toggleThemeMobile')].filter(Boolean);
 
-    // New: file inputs & previews
+    // Files & previews
     const landingFiles   = document.getElementById('landingFiles');
     const landingPlus    = document.getElementById('landingPlus');
     const landingPreview = document.getElementById('landingPreview');
@@ -187,6 +198,10 @@
     const composerFiles   = document.getElementById('composerFiles');
     const composerPlus    = document.getElementById('composerPlus');
     const composerPreview = document.getElementById('composerPreview');
+
+    // Mic buttons
+    const landingMic  = document.getElementById('landingMic');
+    const composerMic = document.getElementById('composerMic');
 
     function scrollBottom(){ requestAnimationFrame(()=>{ elScroll.scrollTop = elScroll.scrollHeight; }); }
     scrollBottom();
@@ -383,6 +398,66 @@
       }
     });
 
+    /* ---------- SPEECH-TO-TEXT (Web Speech API) ---------- */
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    function attachMic(btn, textarea) {
+      if (!btn || !textarea || !SR) { btn?.classList.add('hidden'); return; }
+
+      let recognizing = false;
+      let finalTranscript = '';
+      const rec = new SR();
+      rec.lang = 'en-US';
+      rec.interimResults = true;
+      rec.continuous = false;
+
+      rec.onstart = () => {
+        recognizing = true;
+        btn.setAttribute('aria-pressed', 'true');
+        btn.classList.add('bg-red-600','text-white','mic-on','animate-pulse');
+        btn.textContent = '●';
+      };
+
+      rec.onerror = (e) => {
+        // Common: not-allowed if user blocks mic
+        console.warn('Speech error:', e.error);
+      };
+
+      rec.onresult = (event) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const t = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += t + ' ';
+          } else {
+            interim += t;
+          }
+        }
+        textarea.value = (textarea.value ? textarea.value + ' ' : '') + (finalTranscript + interim).trim();
+        textarea.dispatchEvent(new Event('input'));
+      };
+
+      rec.onend = () => {
+        recognizing = false;
+        btn.setAttribute('aria-pressed', 'false');
+        btn.classList.remove('bg-red-600','text-white','mic-on','animate-pulse');
+        btn.textContent = '🎤';
+      };
+
+      btn.addEventListener('click', async () => {
+        try {
+          if (recognizing) { rec.stop(); return; }
+          finalTranscript = '';
+          rec.start();
+        } catch (err) {
+          console.error('Speech start failed:', err);
+        }
+      });
+    }
+
+    attachMic(landingMic,  landingIn);
+    attachMic(composerMic, elText);
+
     /* ---------- THEME TOGGLING (deterministic) ---------- */
     function setThemeForCards(isLight) {
       // Background for input/chat cards
@@ -437,7 +512,7 @@
         composerShell.classList.toggle('border-neutral-200', isLight);
       }
 
-      // Deterministic card/border swap (fixes “stuck white box”)
+      // Deterministic card/border swap
       setThemeForCards(isLight);
 
       // Titles + inputs color
