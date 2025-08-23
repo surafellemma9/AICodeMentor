@@ -98,8 +98,9 @@ def diag(request):
 
 # ---------- Chat page (ChatGPT-like) ----------
 def chat_page(request):
-    messages = _get_messages_from_session(request)
-    return render(request, "chatbot/chat.html", {"messages": messages})
+    messages = request.session.setdefault("messages", [])
+    return render(request, "chatbot/form.html", {"messages": messages})
+
 
 
 def new_chat(request):
