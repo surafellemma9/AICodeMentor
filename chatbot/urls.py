@@ -1,5 +1,7 @@
 # chatbot/urls.py
 from django.urls import path
+from django.urls import path, include
+from chatbot import views as cb
 
 from . import views
 
