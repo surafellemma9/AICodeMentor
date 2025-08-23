@@ -85,10 +85,7 @@
 
                 <!-- Single box with textarea + plus + mic + send -->
                 <div class="relative rounded-2xl border cm-border border-surface-border cm-card bg-surface-card shadow-card">
-                  <!-- Hidden file input -->
                   <input id="landingFiles" type="file" class="hidden" multiple accept="image/*,.pdf,.txt,.md,.py,.js,.ts,.json,.csv,.zip" />
-
-                  <!-- Attachments preview -->
                   <div id="landingPreview" class="hidden px-3 pt-3 flex flex-wrap gap-2"></div>
 
                   <div class="pl-12 pr-32">
@@ -101,17 +98,22 @@
                     ></textarea>
                   </div>
 
-                  <!-- plus button (left) -->
+                  <!-- plus -->
                   <button type="button" id="landingPlus"
                           class="absolute left-3 top-3 inline-flex items-center justify-center h-9 w-9 rounded-full border cm-border border-surface-border hover:bg-surface/70"
                           title="Add files" aria-label="Add files">＋</button>
 
-                  <!-- mic button (inside, right next to Send) -->
+                  <!-- mic (SVG uses currentColor) -->
                   <button type="button" id="landingMic"
-                          class="absolute right-24 bottom-3 inline-flex items-center justify-center h-10 w-10 rounded-full border cm-border border-surface-border hover:bg-surface/70"
-                          title="Speak" aria-pressed="false" aria-label="Voice input">🎤</button>
+                          class="cm-mic absolute right-24 bottom-3 inline-flex items-center justify-center h-10 w-10 rounded-full border cm-border border-surface-border hover:bg-surface/70 text-neutral-300"
+                          title="Speak" aria-pressed="false" aria-label="Voice input">
+                    <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+                      <path d="M12 14a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v4a4 4 0 0 0 4 4z"></path>
+                      <path d="M5 11a1 1 0 1 0-2 0 9 9 0 0 0 8 8v3a1 1 0 1 0 2 0v-3a9 9 0 0 0 8-8 1 1 0 1 0-2 0 7 7 0 0 1-14 0z"></path>
+                    </svg>
+                  </button>
 
-                  <!-- Send button (inside) -->
+                  <!-- Send -->
                   <button type="submit"
                           class="absolute right-3 bottom-3 rounded-full bg-blue-600 text-white px-5 py-2 text-sm hover:bg-blue-700">
                     Send
@@ -143,9 +145,7 @@
           <h1 id="titleComposer" class="cm-title text-center text-xl font-semibold text-white mb-3">CodeMentorAI</h1>
 
           <div class="relative rounded-2xl border cm-border border-surface-border cm-card bg-surface-card shadow-card">
-            <!-- Hidden file input -->
             <input id="composerFiles" type="file" class="hidden" multiple accept="image/*,.pdf,.txt,.md,.py,.js,.ts,.json,.csv,.zip" />
-            <!-- Previews -->
             <div id="composerPreview" class="hidden px-3 pt-3 flex flex-wrap gap-2"></div>
 
             <div class="pl-12 pr-32">
@@ -153,17 +153,22 @@
                         class="cm-input w-full resize-none bg-transparent px-4 py-3 outline-none text-[15px] leading-6 placeholder:text-neutral-500 text-white"></textarea>
             </div>
 
-            <!-- plus button -->
+            <!-- plus -->
             <button type="button" id="composerPlus"
                     class="absolute left-3 top-2.5 inline-flex items-center justify-center h-9 w-9 rounded-full border cm-border border-surface-border hover:bg-surface/70"
                     title="Add files" aria-label="Add files">＋</button>
 
-            <!-- mic button -->
+            <!-- mic -->
             <button type="button" id="composerMic"
-                    class="absolute right-24 bottom-2.5 inline-flex items-center justify-center h-10 w-10 rounded-full border cm-border border-surface-border hover:bg-surface/70"
-                    title="Speak" aria-pressed="false" aria-label="Voice input">🎤</button>
+                    class="cm-mic absolute right-24 bottom-2.5 inline-flex items-center justify-center h-10 w-10 rounded-full border cm-border border-surface-border hover:bg-surface/70 text-neutral-300"
+                    title="Speak" aria-pressed="false" aria-label="Voice input">
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+                <path d="M12 14a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v4a4 4 0 0 0 4 4z"></path>
+                <path d="M5 11a1 1 0 1 0-2 0 9 9 0 0 0 8 8v3a1 1 0 1 0 2 0v-3a9 9 0 0 0 8-8 1 1 0 1 0-2 0 7 7 0 0 1-14 0z"></path>
+              </svg>
+            </button>
 
-            <!-- Send inside -->
+            <!-- Send -->
             <button type="submit"
                     class="absolute right-3 bottom-2.5 rounded-md bg-blue-600 text-white px-4 py-1.5 text-sm hover:bg-blue-700">
               Send
@@ -228,7 +233,7 @@
       });
     }
 
-    // Attachment helpers (shared)
+    // Attachment helpers
     function previewFiles(fileInput, previewWrap){
       const files = Array.from(fileInput.files || []);
       previewWrap.innerHTML = '';
@@ -266,23 +271,16 @@
         previewWrap.appendChild(chip);
       });
     }
-
-    // Plus → open chooser
     landingPlus?.addEventListener('click', () => landingFiles?.click());
     composerPlus?.addEventListener('click', () => composerFiles?.click());
-
-    // Update previews on change
     landingFiles?.addEventListener('change', ()=> previewFiles(landingFiles, landingPreview));
     composerFiles?.addEventListener('change', ()=> previewFiles(composerFiles, composerPreview));
 
-    // Convert selected images to data URLs (limit size)
     async function filesToPayload(fileInput){
       const MAX_IMAGES = 6;
       const MAX_BYTES  = 4 * 1024 * 1024;
-
       const files = Array.from(fileInput?.files || []);
       const attachments = [];
-
       for (const f of files) {
         if (f.type.startsWith('image/')) {
           if (f.size > MAX_BYTES) continue;
@@ -301,7 +299,7 @@
       return attachments;
     }
 
-    // Helpers to append bubbles
+    // Append bubbles
     function appendUser(text, attachments=[]){
       const wrap = document.createElement('article');
       wrap.className = "flex gap-3 items-start justify-end";
@@ -337,7 +335,7 @@
       return m ? m[1] : "{{ csrf_token }}";
     }
 
-    // AJAX submit (composer)
+    // Submit (composer)
     if (elForm) elForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const text = (elText.value || "").trim();
@@ -366,7 +364,7 @@
       }
     });
 
-    // Landing submit
+    // Submit (landing)
     if (landing) landing.addEventListener('submit', async (e) => {
       e.preventDefault();
       const text = (landingIn.value || "").trim();
@@ -374,7 +372,6 @@
 
       const attachments = await filesToPayload(landingFiles);
 
-      // Switch to conversation view
       landing.closest('.min-h-[50vh]')?.remove();
       document.getElementById('composer')?.classList.remove('hidden');
 
@@ -398,13 +395,14 @@
       }
     });
 
-    /* ---------- SPEECH-TO-TEXT (Web Speech API) ---------- */
+    /* ---------- SPEECH-TO-TEXT (no duplicates) ---------- */
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     function attachMic(btn, textarea) {
       if (!btn || !textarea || !SR) { btn?.classList.add('hidden'); return; }
 
       let recognizing = false;
+      let baseText = '';
       let finalTranscript = '';
       const rec = new SR();
       rec.lang = 'en-US';
@@ -413,13 +411,13 @@
 
       rec.onstart = () => {
         recognizing = true;
+        baseText = textarea.value;           // save starting text
+        finalTranscript = '';
         btn.setAttribute('aria-pressed', 'true');
         btn.classList.add('bg-red-600','text-white','mic-on','animate-pulse');
-        btn.textContent = '●';
       };
 
       rec.onerror = (e) => {
-        // Common: not-allowed if user blocks mic
         console.warn('Speech error:', e.error);
       };
 
@@ -427,13 +425,12 @@
         let interim = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const t = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += t + ' ';
-          } else {
-            interim += t;
-          }
+          if (event.results[i].isFinal) finalTranscript += t + ' ';
+          else interim += t;
         }
-        textarea.value = (textarea.value ? textarea.value + ' ' : '') + (finalTranscript + interim).trim();
+        // Render deterministically: base + final + interim
+        const combined = [baseText, (finalTranscript + interim).trim()].filter(Boolean).join(' ').replace(/\s+/g,' ');
+        textarea.value = combined;
         textarea.dispatchEvent(new Event('input'));
       };
 
@@ -441,34 +438,34 @@
         recognizing = false;
         btn.setAttribute('aria-pressed', 'false');
         btn.classList.remove('bg-red-600','text-white','mic-on','animate-pulse');
-        btn.textContent = '🎤';
       };
 
       btn.addEventListener('click', async () => {
         try {
           if (recognizing) { rec.stop(); return; }
-          finalTranscript = '';
           rec.start();
         } catch (err) {
           console.error('Speech start failed:', err);
         }
       });
     }
-
     attachMic(landingMic,  landingIn);
     attachMic(composerMic, elText);
 
     /* ---------- THEME TOGGLING (deterministic) ---------- */
     function setThemeForCards(isLight) {
-      // Background for input/chat cards
       document.querySelectorAll('.cm-card').forEach(el => {
         el.classList.remove('bg-white', 'bg-surface-card');
         el.classList.add(isLight ? 'bg-white' : 'bg-surface-card');
       });
-      // Borders that should flip
       document.querySelectorAll('.cm-border').forEach(el => {
         el.classList.remove('border-neutral-200', 'border-surface-border');
         el.classList.add(isLight ? 'border-neutral-200' : 'border-surface-border');
+      });
+      // Mic icon color by theme (uses currentColor)
+      document.querySelectorAll('.cm-mic').forEach(el => {
+        el.classList.toggle('text-neutral-300', !isLight); // dark
+        el.classList.toggle('text-neutral-700', isLight);  // light
       });
     }
 
@@ -482,27 +479,23 @@
       root.dataset.theme = theme;
       const isLight = theme === 'light';
 
-      // Body
       body.classList.toggle('bg-surface', !isLight);
       body.classList.toggle('text-neutral-100', !isLight);
       body.classList.toggle('bg-white', isLight);
       body.classList.toggle('text-neutral-900', isLight);
 
-      // Sidebar
       if (sidebar) {
         sidebar.classList.toggle('bg-surface', !isLight);
         sidebar.classList.toggle('border-surface-border', !isLight);
         sidebar.classList.toggle('bg-white', isLight);
         sidebar.classList.toggle('border-neutral-200', isLight);
       }
-      // Mobile header
       if (headerMobile) {
         headerMobile.classList.toggle('border-surface-border', !isLight);
         headerMobile.classList.toggle('border-neutral-200', isLight);
         headerMobile.classList.toggle('bg-surface', !isLight);
         headerMobile.classList.toggle('bg-white', isLight);
       }
-      // Composer shell gradient/border
       if (composerShell) {
         composerShell.classList.toggle('from-surface', !isLight);
         composerShell.classList.toggle('to-surface/60', !isLight);
@@ -512,10 +505,8 @@
         composerShell.classList.toggle('border-neutral-200', isLight);
       }
 
-      // Deterministic card/border swap
       setThemeForCards(isLight);
 
-      // Titles + inputs color
       document.querySelectorAll('.cm-title').forEach(t => {
         t.classList.toggle('text-white', !isLight);
         t.classList.toggle('text-neutral-900', isLight);
@@ -528,15 +519,14 @@
       localStorage.setItem("leetai-theme", theme);
     }
 
-    // Init + buttons
     applyTheme(localStorage.getItem("leetai-theme") || 'dark');
     function toggleTheme() {
       const next = (document.documentElement.dataset.theme === 'dark') ? 'light' : 'dark';
       applyTheme(next);
     }
-    tBtns.forEach(b => b.addEventListener('click', toggleTheme));
+    [document.getElementById('toggleTheme'), document.getElementById('toggleThemeMobile')]
+      .filter(Boolean).forEach(b => b.addEventListener('click', toggleTheme));
 
-    // Sidebar toggle on mobile
     openSb?.addEventListener('click', ()=> sidebar?.classList.toggle('hidden'));
   </script>
 </body>
