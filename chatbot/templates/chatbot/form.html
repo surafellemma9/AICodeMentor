@@ -38,7 +38,7 @@
     <aside id="sidebar" class="hidden md:flex w-72 shrink-0 flex-col border-r border-surface-border bg-surface">
       <div class="p-3 border-b border-surface-border flex items-center gap-2">
         <!-- Logo inside sidebar -->
-        <img id="logoSidebar" src="{% static 'images/logo-dark.png' %}" alt="CodeMentorAI Logo" class="h-6">
+        <img id="logoSidebar" src="{% static 'images/logo-dark.png' %}" alt="CodeMentorAI Logo" class="h-10">
       </div>
       <div class="p-3 border-b border-surface-border">
         <a href="{% url 'chatbot:chatbot_home' %}" class="w-full inline-flex items-center justify-center rounded-md border border-surface-border px-3 py-2 text-sm hover:bg-surface/60">
@@ -86,7 +86,7 @@
             <!-- Empty state -->
             <div class="min-h-[50vh] flex flex-col items-center justify-center">
               <!-- Logo above input -->
-              <img id="logoMain" src="{% static 'images/logo-dark.png' %}" alt="CodeMentorAI Logo" class="h-12 mb-4">
+              <img id="logoMain" src="{% static 'images/logo-dark.png' %}" alt="CodeMentorAI Logo" class="h-20 mb-4">
               <form id="landingForm" action="{% url 'chatbot:ask' %}" method="post" class="w-full max-w-2xl px-4">
                 {% csrf_token %}
                 <div class="flex items-center gap-2">
