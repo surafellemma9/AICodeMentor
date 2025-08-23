@@ -11,30 +11,28 @@ from django.utils.html import escape
 
 logger = logging.getLogger(__name__)
 
-# ----- Provider catalog -----
-# Add "kind" so we know which payload/URL style to use.
+# ----- Provider catalog (OpenAI-compatible /chat/completions) -----
 PROVIDERS = {
     "deepseek": {
         "url": "https://api.deepseek.com/chat/completions",
         "key_env": "DEEPSEEK_API_KEY",
-        "default_model": "deepseek-chat",
+        "default_model": "deepseek-chat",  # or "deepseek-reasoner"
         "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
-        "kind": "openai",
     },
     "groq": {
         "url": "https://api.groq.com/openai/v1/chat/completions",
         "key_env": "GROQ_API_KEY",
+        # You can override via env LLM_MODEL if this default changes.
         "default_model": "llama-3.1-70b-versatile",
         "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
-        "kind": "openai",
     },
     "together": {
         "url": "https://api.together.xyz/v1/chat/completions",
         "key_env": "TOGETHER_API_KEY",
         "default_model": "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
         "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
-        "kind": "openai",
     },
+    # Optional: OpenRouter for easy switching
     "openrouter": {
         "url": "https://openrouter.ai/api/v1/chat/completions",
         "key_env": "OPENROUTER_API_KEY",
@@ -44,32 +42,32 @@ PROVIDERS = {
             "HTTP-Referer": (req.build_absolute_uri("/") if req else getattr(settings, "SITE_URL", "")),
             "X-Title": "LeetAI",
         },
-        "kind": "openai",
     },
-    # ---- NEW: Google Gemini (Generative Language API) ----
+
     "gemini": {
-        # We will append ?key=API_KEY at request time
-        "url": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-        "key_env": "GEMINI_API_KEY",
-        "default_model": "gemini-1.5-flash",
-        # Gemini expects JSON content-type; no Authorization header
-        "headers": lambda _key, _req: {"Content-Type": "application/json"},
-        "kind": "gemini",
-    },
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+    "key_env": "GEMINI_API_KEY",
+    "default_model": "gemini-1.5-flash",  # or gemini-1.5-pro
+    "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
+},
+
 }
 
 
 def _select_provider() -> str:
+    """Pick provider via env; default to deepseek."""
     name = os.environ.get("LLM_PROVIDER", "deepseek").lower()
     return name if name in PROVIDERS else "deepseek"
 
 
 def _get_api_key(var_name: str) -> str:
+    """Read API key from env/settings and strip stray whitespace/newlines/quotes."""
     raw = os.environ.get(var_name) or getattr(settings, var_name, None) or ""
     return str(raw).strip().strip('"').strip("'")
 
 
 def _get_messages_from_session(request):
+    """Fetch running chat transcript from session."""
     return request.session.setdefault("messages", [])
 
 
@@ -84,6 +82,7 @@ def ping(_request):
 
 
 def diag(request):
+    """Quick diagnostics: which provider/model and whether a key is present."""
     name = _select_provider()
     p = PROVIDERS[name]
     key_ok = bool(_get_api_key(p["key_env"]))
@@ -96,12 +95,14 @@ def diag(request):
     )
 
 
-# ---------- Chat page (ChatGPT-like) ----------
+# ---------- ChatGPT-style page ----------
 def chat_page(request):
-    messages = request.session.setdefault("messages", [])
-    return render(request, "chatbot/form.html", {"messages": messages})
-
-
+    """
+    Render the main chat page with the running transcript.
+    Template: templates/chatbot/chat.html
+    """
+    messages = _get_messages_from_session(request)
+    return render(request, "chatbot/chat.html", {"messages": messages})
 
 def new_chat(request):
     request.session["messages"] = []
@@ -109,42 +110,26 @@ def new_chat(request):
     return redirect("chatbot:chatbot_home")
 
 
-# ---------- Simple form (legacy/optional) ----------
+# ---------- Legacy simple form (optional) ----------
 def form_view(request):
     return render(request, "chatbot/form.html")
 
 
-# ---------- Minimal Gemini probe (debug) ----------
-def gemini_probe(_request):
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    model = os.getenv("LLM_MODEL", "gemini-1.5-flash").strip()
-    if not api_key:
-        return JsonResponse({"ok": False, "why": "Missing GEMINI_API_KEY"}, status=500)
-
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-    payload = {"contents": [{"role": "user", "parts": [{"text": "Say 'pong' if you can hear me."}]}]}
-    try:
-        r = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=45)
-        content_type = r.headers.get("content-type", "")
-        out = r.json() if content_type.startswith("application/json") else r.text
-        return JsonResponse({"ok": r.ok, "status": r.status_code, "json": out}, status=r.status_code)
-    except Exception as e:
-        return JsonResponse({"ok": False, "why": str(e)}, status=500)
-
-
-# ---------- Main submit ----------
+# ---------- Send message to model ----------
 def submit_chat(request):
     """
-    Supports:
-      - Form POST (message in request.POST['message']) -> redirect back to chat page
-      - AJAX POST (JSON {"message": ...}) -> JSON {"reply_html": "..."}
+    Handles both:
+    - Standard form POST (message in request.POST['message']) -> redirect back to chat page
+    - AJAX POST with JSON body {"message": "..."} -> returns JSON {"reply_html": "..."}
+    Keeps a running transcript in session for the ChatGPT-like UI.
     """
     if request.method != "POST":
-        return redirect("chatbot:chatbot_home")
+        return redirect("chatbot:chat")  # make sure your urls.py names this route
 
+    # Detect AJAX
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
 
-    # Read message
+    # Read message from POST or JSON
     question = ""
     if request.content_type and "application/json" in request.content_type:
         try:
@@ -159,50 +144,43 @@ def submit_chat(request):
         if is_ajax:
             return JsonResponse({"error": "Please enter a message."}, status=400)
         _append_message(request, "assistant", "Please enter a message.")
-        return redirect("chatbot:chatbot_home")
+        return redirect("chatbot:chat")
 
     # Add user message to transcript
     _append_message(request, "user", question)
 
     provider_name = _select_provider()
     p = PROVIDERS[provider_name]
-    model = (os.environ.get("LLM_MODEL") or p["default_model"]).strip()
 
     key = _get_api_key(p["key_env"])
     if not key:
         reply = f"{provider_name} API key is missing. Set {p['key_env']} in Render → Environment."
         _append_message(request, "assistant", reply)
-        return JsonResponse({"reply_html": escape(reply).replace("\n", "<br>")}) if is_ajax else redirect("chatbot:chatbot_home")
+        if is_ajax:
+            return JsonResponse({"reply_html": escape(reply).replace("\n", "<br>")})
+        return redirect("chatbot:chat")
+
+    url = p["url"]
+    headers = p["headers"](key, request)
+    headers["Content-Type"] = "application/json"
+    model = (os.environ.get("LLM_MODEL") or p["default_model"]).strip()
+
+    # Compose OpenAI-compatible payload with transcript context (last ~20 messages)
+    transcript = _get_messages_from_session(request)[-20:]
+    # Ensure system prompt appears first
+    messages_payload = [{"role": "system", "content": "You are a helpful coding mentor."}] + transcript
+
+    payload = {
+        "model": model,
+        "messages": messages_payload,
+    }
 
     try:
-        if p["kind"] == "openai":
-            url = p["url"]
-            headers = p["headers"](key, request)
-            headers["Content-Type"] = "application/json"
+        r = requests.post(url, headers=headers, json=payload, timeout=60)
 
-            transcript = _get_messages_from_session(request)[-20:]
-            messages_payload = [{"role": "system", "content": "You are a helpful coding mentor."}] + transcript
-            payload = {"model": model, "messages": messages_payload}
-            r = requests.post(url, headers=headers, json=payload, timeout=60)
-
-        elif p["kind"] == "gemini":
-            # Gemini: key in query string, payload uses 'contents'
-            base = p["url"].format(model=model)
-            url = f"{base}?key={key}"
-            headers = p["headers"](key, request)  # sets content-type
-            payload = {
-                "contents": [
-                    {"role": "user", "parts": [{"text": question}]}
-                ]
-            }
-            r = requests.post(url, headers=headers, json=payload, timeout=60)
-
-        else:
-            return _finalize_reply(request, is_ajax, "Unknown provider kind.")
-
-        # Handle HTTP errors uniformly
+        # Auth/billing handling
         if r.status_code in (401, 403):
-            reply = f"{provider_name} rejected the key (HTTP {r.status_code}). Verify the key and access."
+            reply = f"{provider_name} rejected the key (HTTP {r.status_code}). Verify the key and referer/domain settings."
         elif r.status_code == 402:
             reply = f"{provider_name} returned 402 (billing required)."
         elif r.status_code >= 400:
@@ -216,15 +194,9 @@ def submit_chat(request):
             reply = f"Upstream error {r.status_code}: {msg}"
         else:
             data = r.json()
-            if p["kind"] == "openai":
-                choice0 = (data.get("choices") or [{}])[0]
-                reply = (choice0.get("message") or {}).get("content") or choice0.get("text") or ""
-            else:  # gemini
-                cands = data.get("candidates") or []
-                parts = (cands[0].get("content") or {}).get("parts") if cands else []
-                texts = [part.get("text", "") for part in (parts or [])]
-                reply = "\n".join([t for t in texts if t]).strip()
-            reply = reply or "The model returned an empty reply."
+            choice0 = (data.get("choices") or [{}])[0]
+            reply = (choice0.get("message") or {}).get("content") or choice0.get("text") or ""
+            reply = (reply or "").strip() or "The model returned an empty reply."
 
     except requests.Timeout:
         reply = "The model request timed out. Please try again."
@@ -232,11 +204,12 @@ def submit_chat(request):
         logger.exception("submit_chat failed (provider=%s)", provider_name)
         reply = "Unexpected error contacting model. Please try again."
 
+    # Add assistant reply to transcript
     _append_message(request, "assistant", reply)
-    return _finalize_reply(request, is_ajax, reply)
 
-
-def _finalize_reply(request, is_ajax: bool, reply: str):
     if is_ajax:
+        # Return simple HTML (you can switch to Markdown->HTML if desired)
         return JsonResponse({"reply_html": escape(reply).replace("\n", "<br>")})
-    return redirect("chatbot:chatbot_home")
+
+    # Non-AJAX: go back to the chat page which will render the transcript
+    return redirect("chatbot:chat")
