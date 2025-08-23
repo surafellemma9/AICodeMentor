@@ -80,20 +80,32 @@
               <form id="landingForm" action="{% url 'chatbot:ask' %}" method="post" class="w-full max-w-2xl px-4">
                 {% csrf_token %}
 
-                <!-- Title ABOVE the input row -->
                 <h1 id="titleLanding" class="cm-title text-center text-xl font-semibold text-white mb-4">CodeMentorAI</h1>
 
-                <!-- Single box with textarea + send button INSIDE -->
+                <!-- Single box with textarea + plus + send -->
                 <div class="relative rounded-2xl border border-surface-border bg-surface-card shadow-card">
-                  <textarea
-                    id="landingInput"
-                    name="message"
-                    rows="1"
-                    placeholder="How can I help today?"
-                    class="cm-input w-full resize-none bg-transparent px-6 py-4 pr-20 outline-none text-[15px] leading-6 placeholder:text-neutral-400 text-white"
-                  ></textarea>
+                  <!-- Hidden file input -->
+                  <input id="landingFiles" type="file" class="hidden" multiple accept="image/*,.pdf,.txt,.md,.py,.js,.ts,.json,.csv,.zip" />
 
-                  <!-- Send button, inside the box (bottom-right) -->
+                  <!-- Attachments preview -->
+                  <div id="landingPreview" class="hidden px-3 pt-3 flex flex-wrap gap-2"></div>
+
+                  <div class="pl-12 pr-20">
+                    <textarea
+                      id="landingInput"
+                      name="message"
+                      rows="1"
+                      placeholder="How can I help today?"
+                      class="cm-input w-full resize-none bg-transparent px-6 py-4 outline-none text-[15px] leading-6 placeholder:text-neutral-400 text-white"
+                    ></textarea>
+                  </div>
+
+                  <!-- plus button (left) -->
+                  <button type="button" id="landingPlus"
+                          class="absolute left-3 top-3 inline-flex items-center justify-center h-9 w-9 rounded-full border border-surface-border hover:bg-surface/70"
+                          title="Add files">＋</button>
+
+                  <!-- Send button (inside) -->
                   <button type="submit"
                           class="absolute right-3 bottom-3 rounded-full bg-blue-600 text-white px-5 py-2 text-sm hover:bg-blue-700">
                     Send
@@ -122,15 +134,25 @@
             class="{% if not messages or messages|length == 0 %}hidden{% endif %} sticky bottom-0 left-0 right-0 px-3 md:px-6 pb-5 pt-3 border-t border-surface-border bg-gradient-to-t from-surface to-surface/60 backdrop-blur">
         {% csrf_token %}
         <div class="mx-auto max-w-chat">
-
-          <!-- Title ABOVE the composer box -->
           <h1 id="titleComposer" class="cm-title text-center text-xl font-semibold text-white mb-3">CodeMentorAI</h1>
 
           <div class="relative rounded-2xl border border-surface-border bg-surface-card shadow-card">
-            <textarea id="msg" name="message" rows="1" placeholder="Message LeetAI…"
-                      class="cm-input w-full resize-none bg-transparent px-4 py-3 pr-20 outline-none text-[15px] leading-6 placeholder:text-neutral-500 text-white"></textarea>
+            <!-- Hidden file input -->
+            <input id="composerFiles" type="file" class="hidden" multiple accept="image/*,.pdf,.txt,.md,.py,.js,.ts,.json,.csv,.zip" />
+            <!-- Previews -->
+            <div id="composerPreview" class="hidden px-3 pt-3 flex flex-wrap gap-2"></div>
 
-            <!-- Send inside the box -->
+            <div class="pl-12 pr-20">
+              <textarea id="msg" name="message" rows="1" placeholder="Message LeetAI…"
+                        class="cm-input w-full resize-none bg-transparent px-4 py-3 outline-none text-[15px] leading-6 placeholder:text-neutral-500 text-white"></textarea>
+            </div>
+
+            <!-- plus button -->
+            <button type="button" id="composerPlus"
+                    class="absolute left-3 top-2.5 inline-flex items-center justify-center h-9 w-9 rounded-full border border-surface-border hover:bg-surface/70"
+                    title="Add files">＋</button>
+
+            <!-- Send inside -->
             <button type="submit"
                     class="absolute right-3 bottom-2.5 rounded-md bg-blue-600 text-white px-4 py-1.5 text-sm hover:bg-blue-700">
               Send
@@ -157,6 +179,15 @@
     const openSb    = document.getElementById('openSidebar');
     const tBtns     = [document.getElementById('toggleTheme'), document.getElementById('toggleThemeMobile')].filter(Boolean);
 
+    // New: file inputs & previews
+    const landingFiles   = document.getElementById('landingFiles');
+    const landingPlus    = document.getElementById('landingPlus');
+    const landingPreview = document.getElementById('landingPreview');
+
+    const composerFiles   = document.getElementById('composerFiles');
+    const composerPlus    = document.getElementById('composerPlus');
+    const composerPreview = document.getElementById('composerPreview');
+
     function scrollBottom(){ requestAnimationFrame(()=>{ elScroll.scrollTop = elScroll.scrollHeight; }); }
     scrollBottom();
 
@@ -182,14 +213,100 @@
       });
     }
 
+    // Attachment helpers (shared)
+    function previewFiles(fileInput, previewWrap){
+      const files = Array.from(fileInput.files || []);
+      previewWrap.innerHTML = '';
+      if (!files.length) { previewWrap.classList.add('hidden'); return; }
+
+      previewWrap.classList.remove('hidden');
+      files.forEach((f, idx) => {
+        const chip = document.createElement('div');
+        chip.className = "group flex items-center gap-2 rounded-full border border-surface-border px-2 py-1 text-xs bg-surface/60";
+        if (f.type.startsWith('image/')) {
+          const img = document.createElement('img');
+          img.className = "h-6 w-6 rounded object-cover";
+          const reader = new FileReader();
+          reader.onload = e => { img.src = e.target.result; };
+          reader.readAsDataURL(f);
+          chip.appendChild(img);
+        } else {
+          const span = document.createElement('span');
+          span.textContent = f.name.split('/').pop();
+          chip.appendChild(span);
+        }
+        const x = document.createElement('button');
+        x.type = "button";
+        x.textContent = "✕";
+        x.className = "opacity-70 hover:opacity-100";
+        x.addEventListener('click', () => {
+          // remove this file from FileList by rebuilding
+          const all = Array.from(fileInput.files);
+          const keep = all.filter((_, i) => i !== idx);
+          const dt = new DataTransfer();
+          keep.forEach(k => dt.items.add(k));
+          fileInput.files = dt.files;
+          previewFiles(fileInput, previewWrap);
+        });
+        chip.appendChild(x);
+        previewWrap.appendChild(chip);
+      });
+    }
+
+    // Plus → open chooser
+    landingPlus?.addEventListener('click', () => landingFiles?.click());
+    composerPlus?.addEventListener('click', () => composerFiles?.click());
+
+    // Update previews on change
+    landingFiles?.addEventListener('change', ()=> previewFiles(landingFiles, landingPreview));
+    composerFiles?.addEventListener('change', ()=> previewFiles(composerFiles, composerPreview));
+
+    // Convert selected images to data URLs (limit size)
+    async function filesToPayload(fileInput){
+      const MAX_IMAGES = 6;
+      const MAX_BYTES  = 4 * 1024 * 1024; // 4MB per image cap for sanity
+
+      const files = Array.from(fileInput?.files || []);
+      const attachments = [];
+
+      for (const f of files) {
+        if (f.type.startsWith('image/')) {
+          if (f.size > MAX_BYTES) { continue; }
+          const data = await new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = e => res(e.target.result); // data URL
+            r.onerror = rej;
+            r.readAsDataURL(f);
+          });
+          attachments.push({ name: f.name, type: f.type, data });
+        } else {
+          // Non-image files: send only the name and type for now (extend later)
+          attachments.push({ name: f.name, type: f.type, data: null });
+        }
+        if (attachments.length >= MAX_IMAGES) break;
+      }
+      return attachments;
+    }
+
     // Helpers to append bubbles (keeps look aligned to ChatGPT)
-    function appendUser(text){
+    function appendUser(text, attachments=[]){
       const wrap = document.createElement('article');
       wrap.className = "flex gap-3 items-start justify-end";
+      const filesHtml = attachments.length
+        ? `<div class="mt-2 flex flex-wrap gap-2">${attachments.map(a => {
+            if (a.type?.startsWith('image/') && a.data) {
+              return `<img src="${a.data}" class="h-20 w-20 object-cover rounded border border-surface-border" />`;
+            } else {
+              return `<span class="text-xs px-2 py-1 rounded-full border border-surface-border bg-surface/60">${a.name}</span>`;
+            }
+          }).join('')}</div>`
+        : '';
       wrap.innerHTML = `
-        <div class="max-w-[48rem] rounded-2xl bg-blue-600 text-white px-4 py-2 whitespace-pre-wrap shadow"></div>
+        <div class="max-w-[48rem] rounded-2xl bg-blue-600 text-white px-4 py-2 whitespace-pre-wrap shadow">
+          ${text.replace(/</g,'&lt;')}
+          ${filesHtml}
+        </div>
         <div class="h-8 w-8 rounded bg-blue-200 text-blue-900 flex items-center justify-center shrink-0">🧑</div>`;
-      wrap.querySelector('div').textContent = text;
       elThread.appendChild(wrap);
     }
     function appendAssistant(html){
@@ -201,20 +318,30 @@
       elThread.appendChild(wrap);
     }
 
+    // CSRF
+    function getCsrf(){
+      const m = document.cookie.match(/csrftoken=([^;]+)/);
+      return m ? m[1] : "{{ csrf_token }}";
+    }
+
     // AJAX submit (composer)
     if (elForm) elForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const text = (elText.value || "").trim();
-      if (!text) return;
-      appendUser(text);
-      elText.value = ""; elText.style.height = "auto"; scrollBottom();
+      if (!text && (!composerFiles || !(composerFiles.files?.length))) return;
+
+      const attachments = await filesToPayload(composerFiles);
+      appendUser(text || "(attachment)", attachments);
+      elText.value = ""; elText.style.height = "auto";
+      if (composerFiles) { composerFiles.value = ""; composerPreview.classList.add('hidden'); composerPreview.innerHTML = ""; }
+      scrollBottom();
 
       elTyping.classList.remove('hidden');
       try {
         const res = await fetch(elForm.action, {
           method: "POST",
           headers: { "Content-Type":"application/json", "X-Requested-With":"XMLHttpRequest", "X-CSRFToken": getCsrf() },
-          body: JSON.stringify({ message: text })
+          body: JSON.stringify({ message: text, attachments })
         });
         const data = await res.json();
         appendAssistant(data.reply_html || "Sorry, no response.");
@@ -226,17 +353,19 @@
       }
     });
 
-    // Landing form submits same AJAX and reveals sticky composer
+    // Landing → same flow then reveal composer
     if (landing) landing.addEventListener('submit', async (e) => {
       e.preventDefault();
       const text = (landingIn.value || "").trim();
-      if (!text) return;
+      if (!text && (!landingFiles || !(landingFiles.files?.length))) return;
+
+      const attachments = await filesToPayload(landingFiles);
 
       // Switch to conversation view
       landing.closest('.min-h-[50vh]')?.remove();
       document.getElementById('composer')?.classList.remove('hidden');
 
-      appendUser(text);
+      appendUser(text || "(attachment)", attachments);
       scrollBottom();
 
       elTyping.classList.remove('hidden');
@@ -244,7 +373,7 @@
         const res = await fetch(landing.action, {
           method: "POST",
           headers: { "Content-Type":"application/json", "X-Requested-With":"XMLHttpRequest", "X-CSRFToken": getCsrf() },
-          body: JSON.stringify({ message: text })
+          body: JSON.stringify({ message: text, attachments })
         });
         const data = await res.json();
         appendAssistant(data.reply_html || "Sorry, no response.");
@@ -256,57 +385,41 @@
       }
     });
 
-    // CSRF helper
-    function getCsrf(){
-      const m = document.cookie.match(/csrftoken=([^;]+)/);
-      return m ? m[1] : "{{ csrf_token }}";
-    }
-
-    // THEME TOGGLING (dark <-> light)
+    // THEME TOGGLING
     function applyTheme(theme) {
       const root = document.documentElement;
       const body = document.body;
       const sidebar = document.getElementById('sidebar');
       const headerMobile = document.querySelector('header.md\\:hidden');
       const composerShell = document.getElementById('composer');
-
       root.dataset.theme = theme;
       const isLight = theme === 'light';
 
-      // Body
       body.classList.toggle('bg-surface', !isLight);
       body.classList.toggle('text-neutral-100', !isLight);
       body.classList.toggle('bg-white', isLight);
       body.classList.toggle('text-neutral-900', isLight);
 
-      // Sidebar
       if (sidebar) {
         sidebar.classList.toggle('bg-surface', !isLight);
         sidebar.classList.toggle('border-surface-border', !isLight);
         sidebar.classList.toggle('bg-white', isLight);
         sidebar.classList.toggle('border-neutral-200', isLight);
       }
-
-      // Mobile header
       if (headerMobile) {
         headerMobile.classList.toggle('border-surface-border', !isLight);
         headerMobile.classList.toggle('border-neutral-200', isLight);
         headerMobile.classList.toggle('bg-surface', !isLight);
         headerMobile.classList.toggle('bg-white', isLight);
       }
-
-      // Composer container gradient/border
       if (composerShell) {
         composerShell.classList.toggle('from-surface', !isLight);
         composerShell.classList.toggle('to-surface/60', !isLight);
         composerShell.classList.toggle('border-surface-border', !isLight);
-
         composerShell.classList.toggle('from-white', isLight);
         composerShell.classList.toggle('to-white/70', isLight);
         composerShell.classList.toggle('border-neutral-200', isLight);
       }
-
-      // Cards & borders
       document.querySelectorAll('.bg-surface-card').forEach(el => {
         el.classList.toggle('bg-white', isLight);
         el.classList.toggle('bg-surface-card', !isLight);
@@ -315,8 +428,6 @@
         el.classList.toggle('border-neutral-200', isLight);
         el.classList.toggle('border-surface-border', !isLight);
       });
-
-      // Titles + inputs color (your request)
       document.querySelectorAll('.cm-title').forEach(t => {
         t.classList.toggle('text-white', !isLight);
         t.classList.toggle('text-neutral-900', isLight);
@@ -328,10 +439,7 @@
 
       localStorage.setItem("leetai-theme", theme);
     }
-
-    // Init theme (default dark)
     applyTheme(localStorage.getItem("leetai-theme") || 'dark');
-
     function toggleTheme() {
       const next = (document.documentElement.dataset.theme === 'dark') ? 'light' : 'dark';
       applyTheme(next);
