@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>CodeMentorAI</title>
 
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     (() => {
@@ -36,12 +35,10 @@
   <div class="h-full flex">
     <!-- Sidebar -->
     <aside id="sidebar" class="hidden md:flex w-72 shrink-0 flex-col border-r border-surface-border bg-surface">
-      <!-- Logo in Sidebar -->
       <div class="p-3 border-b border-surface-border flex items-center gap-2">
         <img id="logoSidebar" src="{% static 'images/logo-dark.png' %}" alt="CodeMentorAI Logo" class="h-10">
       </div>
 
-      <!-- Row: New chat + Moon (side-by-side) -->
       <div class="p-3 border-b border-surface-border flex items-center gap-2">
         <a href="{% url 'chatbot:chatbot_home' %}"
            class="flex-1 inline-flex items-center justify-center rounded-md border border-surface-border px-3 py-2 text-sm hover:bg-surface/60">
@@ -60,7 +57,6 @@
 
     <!-- Main -->
     <main class="min-w-0 flex-1 flex flex-col">
-      <!-- Mobile header -->
       <header class="md:hidden flex items-center justify-between gap-3 border-b border-surface-border px-3 py-2">
         <button id="openSidebar" class="rounded-md border border-surface-border px-2 py-1 text-sm">☰</button>
         <div class="font-medium">CodeMentorAI</div>
@@ -89,19 +85,19 @@
               {% endif %}
             {% endfor %}
           {% else %}
-            <!-- Landing State with Big Logo + Input -->
+            <!-- Landing -->
             <div class="min-h-[50vh] flex flex-col items-center justify-center">
               <img id="logoMain" src="{% static 'images/logo-dark.png' %}" alt="CodeMentorAI Logo" class="h-20 mb-4">
               <form id="landingForm" action="{% url 'chatbot:ask' %}" method="post" class="w-full max-w-2xl px-4">
                 {% csrf_token %}
                 <div class="flex items-center gap-2">
-                  <input
+                  <textarea
                     id="landingInput"
-                    type="text"
                     name="message"
+                    rows="1"
                     placeholder="How can I help today?"
-                    class="flex-1 rounded-full bg-surface-card border border-surface-border px-6 py-4 text-[15px] text-neutral-100 placeholder:text-neutral-400 outline-none focus:border-blue-500"
-                  />
+                    class="flex-1 rounded-full bg-surface-card border border-surface-border px-6 py-4 text-[15px] text-neutral-100 placeholder:text-neutral-400 outline-none focus:border-blue-500 resize-none"
+                  ></textarea>
                   <button type="submit" class="rounded-full bg-blue-600 text-white px-5 py-3 text-sm hover:bg-blue-700">
                     Send
                   </button>
@@ -122,60 +118,52 @@
     const tBtns = [document.getElementById('toggleTheme'), document.getElementById('toggleThemeMobile')].filter(Boolean);
     const logoMain = document.getElementById('logoMain');
     const logoSidebar = document.getElementById('logoSidebar');
+    const landingIn = document.getElementById('landingInput');
 
-    // apply colors for light/dark
     function applyTheme(theme) {
       root.dataset.theme = theme;
       const isLight = theme === 'light';
 
-      // body bg + text
       body.classList.toggle('bg-surface', !isLight);
       body.classList.toggle('text-neutral-100', !isLight);
       body.classList.toggle('bg-white', isLight);
       body.classList.toggle('text-neutral-900', isLight);
 
-      // sidebar bg + borders
       if (sidebar) {
         sidebar.classList.toggle('bg-surface', !isLight);
         sidebar.classList.toggle('border-surface-border', !isLight);
         sidebar.classList.toggle('bg-white', isLight);
         sidebar.classList.toggle('border-neutral-200', isLight);
-        // update borders inside sidebar
-        sidebar.querySelectorAll('[class*="border-surface-border"], [class*="border-neutral-200"]').forEach(el => {
-          el.classList.toggle('border-surface-border', !isLight);
-          el.classList.toggle('border-neutral-200', isLight);
-        });
-        // hover backgrounds look right in light too
-        sidebar.querySelectorAll('[class*="hover:bg-surface/60"]').forEach(el => {
-          if (isLight) {
-            el.classList.add('hover:bg-neutral-50');
-          } else {
-            el.classList.remove('hover:bg-neutral-50');
-          }
-        });
       }
 
-      // logos
       if (logoMain)   logoMain.src   = isLight ? "{% static 'images/logo-light.png' %}" : "{% static 'images/logo-dark.png' %}";
       if (logoSidebar) logoSidebar.src = isLight ? "{% static 'images/logo-light.png' %}" : "{% static 'images/logo-dark.png' %}";
 
+      // input text color flip
+      if (landingIn) {
+        landingIn.classList.toggle("text-neutral-100", !isLight);
+        landingIn.classList.toggle("text-neutral-900", isLight);
+      }
+
       localStorage.setItem("leetai-theme", theme);
     }
-
-    // init
     applyTheme(localStorage.getItem("leetai-theme") || 'dark');
-
-    function toggleTheme() {
-      const next = (root.dataset.theme === 'dark') ? 'light' : 'dark';
-      applyTheme(next);
-    }
-
+    function toggleTheme() { applyTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'); }
     tBtns.forEach(b => b.addEventListener("click", toggleTheme));
 
-    // mobile sidebar open/close
-    document.getElementById('openSidebar')?.addEventListener('click', () => {
-      sidebar?.classList.toggle('hidden');
-    });
+    // shift+enter/newline handler
+    if (landingIn) {
+      landingIn.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          landingIn.form.requestSubmit();
+        }
+      });
+      landingIn.addEventListener("input", () => {
+        landingIn.style.height = "auto";
+        landingIn.style.height = Math.min(landingIn.scrollHeight, 200) + "px";
+      });
+    }
   </script>
 </body>
 </html>
