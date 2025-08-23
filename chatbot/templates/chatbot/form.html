@@ -31,26 +31,26 @@
 <body class="h-screen bg-surface text-neutral-100 antialiased">
   <div class="h-full flex">
     <!-- Sidebar -->
-    <aside id="sidebar" class="hidden md:flex w-72 shrink-0 flex-col border-r border-surface-border bg-surface">
-      <div class="p-3 border-b border-surface-border flex items-center gap-2">
-        <a href="{% url 'chatbot:chatbot_home' %}" class="w-full inline-flex items-center justify-center rounded-md border border-surface-border px-3 py-2 text-sm hover:bg-surface/60">
+    <aside id="sidebar" class="hidden md:flex w-72 shrink-0 flex-col border cm-border border-surface-border bg-surface">
+      <div class="p-3 border-t-0 border-r-0 border-l-0 border-b cm-border border-surface-border flex items-center gap-2">
+        <a href="{% url 'chatbot:chatbot_home' %}" class="w-full inline-flex items-center justify-center rounded-md border cm-border border-surface-border px-3 py-2 text-sm hover:bg-surface/60">
           + New chat
         </a>
-        <button id="toggleTheme" class="rounded-md border border-surface-border px-2 py-2 text-sm hover:bg-surface/60" title="Toggle theme">☾</button>
+        <button id="toggleTheme" class="rounded-md border cm-border border-surface-border px-2 py-2 text-sm hover:bg-surface/60" title="Toggle theme">☾</button>
       </div>
       <nav class="flex-1 overflow-y-auto p-2 space-y-1 text-sm text-neutral-300">
         <div class="px-3 py-2 text-neutral-500">No conversations yet</div>
       </nav>
-      <div class="p-3 text-xs text-neutral-500 border-t border-surface-border">LeetAI</div>
+      <div class="p-3 text-xs text-neutral-500 border cm-border border-surface-border border-b-0 border-r-0 border-l-0">LeetAI</div>
     </aside>
 
     <!-- Main -->
     <main class="min-w-0 flex-1 flex flex-col">
       <!-- Mobile header -->
-      <header class="md:hidden flex items-center justify-between gap-3 border-b border-surface-border px-3 py-2">
-        <button id="openSidebar" class="rounded-md border border-surface-border px-2 py-1 text-sm">☰</button>
+      <header class="md:hidden flex items-center justify-between gap-3 border cm-border border-surface-border px-3 py-2">
+        <button id="openSidebar" class="rounded-md border cm-border border-surface-border px-2 py-1 text-sm">☰</button>
         <div class="font-medium">LeetAI</div>
-        <button id="toggleThemeMobile" class="rounded-md border border-surface-border px-2 py-1 text-sm">☾</button>
+        <button id="toggleThemeMobile" class="rounded-md border cm-border border-surface-border px-2 py-1 text-sm">☾</button>
       </header>
 
       <!-- Conversation -->
@@ -83,7 +83,7 @@
                 <h1 id="titleLanding" class="cm-title text-center text-xl font-semibold text-white mb-4">CodeMentorAI</h1>
 
                 <!-- Single box with textarea + plus + send -->
-                <div class="relative rounded-2xl border border-surface-border bg-surface-card shadow-card">
+                <div class="relative rounded-2xl border cm-border border-surface-border cm-card bg-surface-card shadow-card">
                   <!-- Hidden file input -->
                   <input id="landingFiles" type="file" class="hidden" multiple accept="image/*,.pdf,.txt,.md,.py,.js,.ts,.json,.csv,.zip" />
 
@@ -102,7 +102,7 @@
 
                   <!-- plus button (left) -->
                   <button type="button" id="landingPlus"
-                          class="absolute left-3 top-3 inline-flex items-center justify-center h-9 w-9 rounded-full border border-surface-border hover:bg-surface/70"
+                          class="absolute left-3 top-3 inline-flex items-center justify-center h-9 w-9 rounded-full border cm-border border-surface-border hover:bg-surface/70"
                           title="Add files">＋</button>
 
                   <!-- Send button (inside) -->
@@ -120,7 +120,7 @@
           <!-- Typing dots -->
           <div id="typing" class="hidden flex gap-3 items-center">
             <div class="h-8 w-8 rounded bg-surface/60 flex items-center justify-center shrink-0">🤖</div>
-            <div class="inline-flex items-center gap-1 px-3 py-2 rounded-2xl bg-surface-card border border-surface-border">
+            <div class="inline-flex items-center gap-1 px-3 py-2 rounded-2xl cm-card bg-surface-card border cm-border border-surface-border">
               <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce [animation-delay:-0.2s]"></span>
               <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce"></span>
               <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce [animation-delay:0.2s]"></span>
@@ -131,12 +131,12 @@
 
       <!-- Composer (sticky) -->
       <form id="composer" action="{% url 'chatbot:ask' %}" method="post"
-            class="{% if not messages or messages|length == 0 %}hidden{% endif %} sticky bottom-0 left-0 right-0 px-3 md:px-6 pb-5 pt-3 border-t border-surface-border bg-gradient-to-t from-surface to-surface/60 backdrop-blur">
+            class="{% if not messages or messages|length == 0 %}hidden{% endif %} sticky bottom-0 left-0 right-0 px-3 md:px-6 pb-5 pt-3 border cm-border border-surface-border bg-gradient-to-t from-surface to-surface/60 backdrop-blur">
         {% csrf_token %}
         <div class="mx-auto max-w-chat">
           <h1 id="titleComposer" class="cm-title text-center text-xl font-semibold text-white mb-3">CodeMentorAI</h1>
 
-          <div class="relative rounded-2xl border border-surface-border bg-surface-card shadow-card">
+          <div class="relative rounded-2xl border cm-border border-surface-border cm-card bg-surface-card shadow-card">
             <!-- Hidden file input -->
             <input id="composerFiles" type="file" class="hidden" multiple accept="image/*,.pdf,.txt,.md,.py,.js,.ts,.json,.csv,.zip" />
             <!-- Previews -->
@@ -149,7 +149,7 @@
 
             <!-- plus button -->
             <button type="button" id="composerPlus"
-                    class="absolute left-3 top-2.5 inline-flex items-center justify-center h-9 w-9 rounded-full border border-surface-border hover:bg-surface/70"
+                    class="absolute left-3 top-2.5 inline-flex items-center justify-center h-9 w-9 rounded-full border cm-border border-surface-border hover:bg-surface/70"
                     title="Add files">＋</button>
 
             <!-- Send inside -->
@@ -218,11 +218,11 @@
       const files = Array.from(fileInput.files || []);
       previewWrap.innerHTML = '';
       if (!files.length) { previewWrap.classList.add('hidden'); return; }
-
       previewWrap.classList.remove('hidden');
+
       files.forEach((f, idx) => {
         const chip = document.createElement('div');
-        chip.className = "group flex items-center gap-2 rounded-full border border-surface-border px-2 py-1 text-xs bg-surface/60";
+        chip.className = "group flex items-center gap-2 rounded-full border cm-border border-surface-border px-2 py-1 text-xs bg-surface/60";
         if (f.type.startsWith('image/')) {
           const img = document.createElement('img');
           img.className = "h-6 w-6 rounded object-cover";
@@ -240,7 +240,6 @@
         x.textContent = "✕";
         x.className = "opacity-70 hover:opacity-100";
         x.addEventListener('click', () => {
-          // remove this file from FileList by rebuilding
           const all = Array.from(fileInput.files);
           const keep = all.filter((_, i) => i !== idx);
           const dt = new DataTransfer();
@@ -264,23 +263,22 @@
     // Convert selected images to data URLs (limit size)
     async function filesToPayload(fileInput){
       const MAX_IMAGES = 6;
-      const MAX_BYTES  = 4 * 1024 * 1024; // 4MB per image cap for sanity
+      const MAX_BYTES  = 4 * 1024 * 1024;
 
       const files = Array.from(fileInput?.files || []);
       const attachments = [];
 
       for (const f of files) {
         if (f.type.startsWith('image/')) {
-          if (f.size > MAX_BYTES) { continue; }
+          if (f.size > MAX_BYTES) continue;
           const data = await new Promise((res, rej) => {
             const r = new FileReader();
-            r.onload = e => res(e.target.result); // data URL
+            r.onload = e => res(e.target.result);
             r.onerror = rej;
             r.readAsDataURL(f);
           });
           attachments.push({ name: f.name, type: f.type, data });
         } else {
-          // Non-image files: send only the name and type for now (extend later)
           attachments.push({ name: f.name, type: f.type, data: null });
         }
         if (attachments.length >= MAX_IMAGES) break;
@@ -288,16 +286,16 @@
       return attachments;
     }
 
-    // Helpers to append bubbles (keeps look aligned to ChatGPT)
+    // Helpers to append bubbles
     function appendUser(text, attachments=[]){
       const wrap = document.createElement('article');
       wrap.className = "flex gap-3 items-start justify-end";
       const filesHtml = attachments.length
         ? `<div class="mt-2 flex flex-wrap gap-2">${attachments.map(a => {
             if (a.type?.startsWith('image/') && a.data) {
-              return `<img src="${a.data}" class="h-20 w-20 object-cover rounded border border-surface-border" />`;
+              return `<img src="${a.data}" class="h-20 w-20 object-cover rounded border cm-border border-surface-border" />`;
             } else {
-              return `<span class="text-xs px-2 py-1 rounded-full border border-surface-border bg-surface/60">${a.name}</span>`;
+              return `<span class="text-xs px-2 py-1 rounded-full border cm-border border-surface-border bg-surface/60">${a.name}</span>`;
             }
           }).join('')}</div>`
         : '';
@@ -318,7 +316,7 @@
       elThread.appendChild(wrap);
     }
 
-    // CSRF
+    // CSRF helper
     function getCsrf(){
       const m = document.cookie.match(/csrftoken=([^;]+)/);
       return m ? m[1] : "{{ csrf_token }}";
@@ -353,7 +351,7 @@
       }
     });
 
-    // Landing → same flow then reveal composer
+    // Landing submit
     if (landing) landing.addEventListener('submit', async (e) => {
       e.preventDefault();
       const text = (landingIn.value || "").trim();
@@ -385,33 +383,51 @@
       }
     });
 
-    // THEME TOGGLING
+    /* ---------- THEME TOGGLING (deterministic) ---------- */
+    function setThemeForCards(isLight) {
+      // Background for input/chat cards
+      document.querySelectorAll('.cm-card').forEach(el => {
+        el.classList.remove('bg-white', 'bg-surface-card');
+        el.classList.add(isLight ? 'bg-white' : 'bg-surface-card');
+      });
+      // Borders that should flip
+      document.querySelectorAll('.cm-border').forEach(el => {
+        el.classList.remove('border-neutral-200', 'border-surface-border');
+        el.classList.add(isLight ? 'border-neutral-200' : 'border-surface-border');
+      });
+    }
+
     function applyTheme(theme) {
       const root = document.documentElement;
       const body = document.body;
       const sidebar = document.getElementById('sidebar');
       const headerMobile = document.querySelector('header.md\\:hidden');
       const composerShell = document.getElementById('composer');
+
       root.dataset.theme = theme;
       const isLight = theme === 'light';
 
+      // Body
       body.classList.toggle('bg-surface', !isLight);
       body.classList.toggle('text-neutral-100', !isLight);
       body.classList.toggle('bg-white', isLight);
       body.classList.toggle('text-neutral-900', isLight);
 
+      // Sidebar
       if (sidebar) {
         sidebar.classList.toggle('bg-surface', !isLight);
         sidebar.classList.toggle('border-surface-border', !isLight);
         sidebar.classList.toggle('bg-white', isLight);
         sidebar.classList.toggle('border-neutral-200', isLight);
       }
+      // Mobile header
       if (headerMobile) {
         headerMobile.classList.toggle('border-surface-border', !isLight);
         headerMobile.classList.toggle('border-neutral-200', isLight);
         headerMobile.classList.toggle('bg-surface', !isLight);
         headerMobile.classList.toggle('bg-white', isLight);
       }
+      // Composer shell gradient/border
       if (composerShell) {
         composerShell.classList.toggle('from-surface', !isLight);
         composerShell.classList.toggle('to-surface/60', !isLight);
@@ -420,14 +436,11 @@
         composerShell.classList.toggle('to-white/70', isLight);
         composerShell.classList.toggle('border-neutral-200', isLight);
       }
-      document.querySelectorAll('.bg-surface-card').forEach(el => {
-        el.classList.toggle('bg-white', isLight);
-        el.classList.toggle('bg-surface-card', !isLight);
-      });
-      document.querySelectorAll('.border-surface-border').forEach(el => {
-        el.classList.toggle('border-neutral-200', isLight);
-        el.classList.toggle('border-surface-border', !isLight);
-      });
+
+      // Deterministic card/border swap (fixes “stuck white box”)
+      setThemeForCards(isLight);
+
+      // Titles + inputs color
       document.querySelectorAll('.cm-title').forEach(t => {
         t.classList.toggle('text-white', !isLight);
         t.classList.toggle('text-neutral-900', isLight);
@@ -439,6 +452,8 @@
 
       localStorage.setItem("leetai-theme", theme);
     }
+
+    // Init + buttons
     applyTheme(localStorage.getItem("leetai-theme") || 'dark');
     function toggleTheme() {
       const next = (document.documentElement.dataset.theme === 'dark') ? 'light' : 'dark';
