@@ -6,12 +6,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>CodeMentorAI</title>
 
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+    // Persist theme
     (() => {
       const saved = localStorage.getItem("leetai-theme");
       if (saved) document.documentElement.dataset.theme = saved;
     })();
+
+    // Tailwind theme tokens
     tailwind.config = {
       theme: {
         extend: {
@@ -28,10 +32,6 @@
     pre { background:#0e0f12; border:1px solid #26272d; border-radius:.75rem; padding:.9rem 1rem; overflow:auto }
     code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace }
     #scroll { scroll-behavior:smooth }
-
-    /* Hide scrollbars inside the rounded input */
-    .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
   </style>
 </head>
 
@@ -39,32 +39,45 @@
   <div class="h-full flex">
     <!-- Sidebar -->
     <aside id="sidebar" class="hidden md:flex w-72 shrink-0 flex-col border-r border-surface-border bg-surface">
-      <div class="p-3 border-b border-surface-border flex items-center gap-2">
-        <img id="logoSidebar" src="{% static 'images/logo-dark.png' %}" alt="CodeMentorAI Logo" class="h-10">
-      </div>
+      <div class="p-3 border-b border-surface-border flex items-center justify-between gap-2">
+        <!-- Glassmorphic logo (sidebar header) -->
+        <div
+          class="flex items-center gap-2 rounded-xl px-3 py-1 border"
+          style="
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-color: rgba(255,255,255,0.08);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+          "
+        >
+          <img id="sbLogoDark" src="{% static 'images/logo-dark.png' %}" class="h-6 w-auto" alt="CodeMentorAI" />
+          <img id="sbLogoLight" src="{% static 'images/logo-light.png' %}" class="h-6 w-auto hidden" alt="CodeMentorAI" />
+        </div>
 
-      <!-- Row: New chat + Moon -->
-      <div class="p-3 border-b flex items-center gap-2 border-surface-border">
-        <a href="{% url 'chatbot:chatbot_home' %}"
-           class="flex-1 inline-flex items-center justify-center rounded-md border border-surface-border px-3 py-2 text-sm hover:bg-surface/60">
-          + New chat
-        </a>
-        <button id="toggleTheme"
-                class="shrink-0 rounded-md border border-surface-border px-3 py-2 text-sm hover:bg-surface/60"
-                title="Toggle theme">☾</button>
+        <div class="flex items-center gap-2">
+          <a href="{% url 'chatbot:chatbot_new' %}" class="inline-flex items-center justify-center rounded-md border border-surface-border px-3 py-2 text-sm hover:bg-surface/60">
+            + New chat
+          </a>
+          <button id="toggleTheme" class="rounded-md border border-surface-border px-2 py-2 text-sm hover:bg-surface/60" title="Toggle theme">☾</button>
+        </div>
       </div>
 
       <nav class="flex-1 overflow-y-auto p-2 space-y-1 text-sm text-neutral-300">
         <div class="px-3 py-2 text-neutral-500">No conversations yet</div>
       </nav>
-      <div class="p-3 text-xs text-neutral-500 border-t border-surface-border">CodeMentorAI</div>
+      <div class="p-3 text-xs text-neutral-500 border-t border-surface-border">LeetAI</div>
     </aside>
 
     <!-- Main -->
     <main class="min-w-0 flex-1 flex flex-col">
+      <!-- Mobile header -->
       <header class="md:hidden flex items-center justify-between gap-3 border-b border-surface-border px-3 py-2">
         <button id="openSidebar" class="rounded-md border border-surface-border px-2 py-1 text-sm">☰</button>
-        <div class="font-medium">CodeMentorAI</div>
+        <div class="font-medium flex items-center gap-2">
+          <img id="mhLogoDark" src="{% static 'images/logo-dark.png' %}" class="h-5 w-auto" alt="CodeMentorAI" />
+          <img id="mhLogoLight" src="{% static 'images/logo-light.png' %}" class="h-5 w-auto hidden" alt="CodeMentorAI" />
+        </div>
         <button id="toggleThemeMobile" class="rounded-md border border-surface-border px-2 py-1 text-sm">☾</button>
       </header>
 
@@ -90,136 +103,234 @@
               {% endif %}
             {% endfor %}
           {% else %}
-            <!-- Landing -->
-            <div class="min-h-[50vh] flex flex-col items-center justify-center">
-              <img id="logoMain" src="{% static 'images/logo-dark.png' %}" alt="CodeMentorAI Logo" class="h-20 mb-4">
-
-              <!-- Input group container: theme-aware -->
-              <form id="landingForm" action="{% url 'chatbot:ask' %}" method="post" class="w-full max-w-2xl px-4">
+            <!-- Empty landing with glass logo + single rounded input -->
+            <div class="min-h-[50vh] flex items-center justify-center">
+              <form id="landingForm" action="{% url 'chatbot:chatbot_ask' %}" method="post" class="w-full max-w-2xl px-4">
                 {% csrf_token %}
-                <div id="inputShell"
-                     class="flex items-center gap-2 rounded-full border px-2 py-2 shadow-card
-                            bg-surface-card border-surface-border">
-                  <!-- Auto-resizing textarea, no scrollbars -->
-                  <textarea id="landingInput" name="message" rows="1"
-                            placeholder="How can I help today?"
-                            class="flex-1 bg-transparent resize-none no-scrollbar outline-none
-                                   px-4 py-2 text-[15px] leading-6 placeholder:text-neutral-400
-                                   text-neutral-100"
-                            ></textarea>
 
-                  <button type="submit"
-                          class="shrink-0 rounded-full bg-blue-600 text-white px-5 py-2.5 text-sm hover:bg-blue-700">
-                    Send
-                  </button>
+                <!-- Glassmorphic logo/title (center, above textbox) -->
+                <div class="flex justify-center mb-5">
+                  <div
+                    class="flex items-center gap-3 rounded-2xl px-4 py-2 border"
+                    style="
+                      background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+                      backdrop-filter: blur(12px);
+                      -webkit-backdrop-filter: blur(12px);
+                      border-color: rgba(255,255,255,0.08);
+                      box-shadow: 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+                    "
+                  >
+                    <img id="lgLogoDark" src="{% static 'images/logo-dark.png' %}" class="h-8 w-auto" alt="CodeMentorAI" />
+                    <img id="lgLogoLight" src="{% static 'images/logo-light.png' %}" class="h-8 w-auto hidden" alt="CodeMentorAI" />
+                    <span id="logoText" class="text-base font-semibold tracking-wide">CodeMentorAI</span>
+                  </div>
                 </div>
-                <p class="mt-3 text-xs text-neutral-500 text-center">Tip: Press Enter to send • Shift+Enter for newline</p>
+
+                <!-- Single rounded input with inline Send button -->
+                <div class="flex items-center gap-2">
+                  <div class="relative flex-1">
+                    <textarea
+                      id="landingInput"
+                      name="message"
+                      rows="1"
+                      placeholder="How can I help today?"
+                      class="w-full rounded-full bg-surface-card border border-surface-border px-5 py-4 pr-16 text-[15px] leading-6 placeholder:text-neutral-400 outline-none focus:border-blue-500 resize-none"
+                    ></textarea>
+                    <button type="submit"
+                      class="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700">
+                      Send
+                    </button>
+                  </div>
+                </div>
+
+                <p class="mt-3 text-xs text-neutral-500 text-center">
+                  Enter to send • Shift+Enter for newline
+                </p>
               </form>
             </div>
           {% endif %}
+
+          <!-- Typing dots -->
+          <div id="typing" class="hidden flex gap-3 items-center">
+            <div class="h-8 w-8 rounded bg-surface/60 flex items-center justify-center shrink-0">🤖</div>
+            <div class="inline-flex items-center gap-1 px-3 py-2 rounded-2xl bg-surface-card border border-surface-border">
+              <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce [animation-delay:-0.2s]"></span>
+              <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce"></span>
+              <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce [animation-delay:0.2s]"></span>
+            </div>
+          </div>
         </div>
       </section>
+
+      <!-- Composer (sticky, only when there are messages) -->
+      <form id="composer" action="{% url 'chatbot:chatbot_ask' %}" method="post"
+            class="{% if not messages or messages|length == 0 %}hidden{% endif %} sticky bottom-0 left-0 right-0 px-3 md:px-6 pb-5 pt-3 border-t border-surface-border bg-gradient-to-t from-surface to-surface/60 backdrop-blur">
+        {% csrf_token %}
+        <div class="mx-auto max-w-chat">
+          <div class="rounded-2xl border border-surface-border bg-surface-card shadow-card">
+            <div class="px-3 py-2">
+              <textarea id="msg" name="message" rows="1" placeholder="Message CodeMentorAI…"
+                        class="w-full resize-none bg-transparent px-2 py-2 outline-none text-[15px] leading-6 placeholder:text-neutral-500"></textarea>
+            </div>
+            <div class="flex items-center justify-between px-2 py-2 border-t border-surface-border">
+              <div class="text-xs text-neutral-500 px-2">Shift+Enter for newline</div>
+              <div class="flex items-center gap-2">
+                <button type="button" id="stopBtn"
+                        class="hidden text-sm rounded-md border border-surface-border px-3 py-1.5 hover:bg-surface">
+                  Stop
+                </button>
+                <button type="submit"
+                        class="text-sm rounded-md bg-blue-600 text-white px-4 py-1.5 hover:bg-blue-700">
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-neutral-500 text-center">
+            CodeMentorAI may produce inaccurate information about people, places, or facts.
+          </p>
+        </div>
+      </form>
     </main>
   </div>
 
   <script>
-    const root = document.documentElement;
-    const body = document.body;
-    const sidebar = document.getElementById('sidebar');
-    const tBtns = [document.getElementById('toggleTheme'), document.getElementById('toggleThemeMobile')].filter(Boolean);
-    const openSidebarBtn = document.getElementById('openSidebar');
-    const logoMain = document.getElementById('logoMain');
-    const logoSidebar = document.getElementById('logoSidebar');
+    const root      = document.documentElement;
+    const elScroll  = document.getElementById('scroll');
+    const elThread  = document.getElementById('thread');
+    const elForm    = document.getElementById('composer');
+    const elText    = document.getElementById('msg');
+    const elTyping  = document.getElementById('typing');
+    const landing   = document.getElementById('landingForm');
+    const landingIn = document.getElementById('landingInput');
+    const sidebar   = document.getElementById('sidebar');
+    const openSb    = document.getElementById('openSidebar');
+    const tBtns     = [document.getElementById('toggleTheme'), document.getElementById('toggleThemeMobile')].filter(Boolean);
 
-    // input pieces
-    const inputShell = document.getElementById('inputShell');  // rounded container
-    const landingIn  = document.getElementById('landingInput');
+    // Logos for theme sync
+    const logoPairs = [
+      ['lgLogoDark','lgLogoLight'],
+      ['sbLogoDark','sbLogoLight'],
+      ['mhLogoDark','mhLogoLight']
+    ];
 
-    function setThemeClasses(isLight) {
-      // BODY
-      body.classList.toggle('bg-surface', !isLight);
-      body.classList.toggle('text-neutral-100', !isLight);
-      body.classList.toggle('bg-white', isLight);
-      body.classList.toggle('text-neutral-900', isLight);
+    // CSRF
+    const csrftoken = (function(){ const m = document.cookie.match(/csrftoken=([^;]+)/); return m?m[1]:"{{ csrf_token }}"; })();
 
-      // SIDEBAR bg + border
-      if (sidebar) {
-        sidebar.classList.toggle('bg-surface', !isLight);
-        sidebar.classList.toggle('border-surface-border', !isLight);
-        sidebar.classList.toggle('bg-white', isLight);
-        sidebar.classList.toggle('border-neutral-200', isLight);
+    function scrollBottom(){ requestAnimationFrame(()=>{ elScroll.scrollTop = elScroll.scrollHeight; }); }
+    scrollBottom();
 
-        // swap borders inside sidebar rows
-        sidebar.querySelectorAll('[class*="border-surface-border"], [class*="border-neutral-200"]')
-          .forEach(el => {
-            el.classList.toggle('border-surface-border', !isLight);
-            el.classList.toggle('border-neutral-200', isLight);
-          });
+    // Auto-resize + Enter behavior for composer
+    if (elText) {
+      elText.addEventListener('input', () => {
+        elText.style.height = 'auto';
+        elText.style.height = Math.min(elText.scrollHeight, 220) + 'px';
+      });
+      elText.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); elForm.requestSubmit(); }
+      });
+    }
 
-        // hover color
-        sidebar.querySelectorAll('[class*="hover:bg-surface/60"]').forEach(el => {
-          if (isLight) el.classList.add('hover:bg-neutral-50'); else el.classList.remove('hover:bg-neutral-50');
+    // Helpers to append bubbles
+    function appendUser(text){
+      const wrap = document.createElement('article');
+      wrap.className = "flex gap-3 items-start justify-end";
+      wrap.innerHTML = `
+        <div class="max-w-[48rem] rounded-2xl bg-blue-600 text-white px-4 py-2 whitespace-pre-wrap shadow"></div>
+        <div class="h-8 w-8 rounded bg-blue-200 text-blue-900 flex items-center justify-center shrink-0">🧑</div>`;
+      wrap.querySelector('div').textContent = text;
+      elThread.appendChild(wrap);
+    }
+    function appendAssistant(html){
+      const wrap = document.createElement('article');
+      wrap.className = "flex gap-3 items-start";
+      wrap.innerHTML = `
+        <div class="h-8 w-8 rounded bg-surface/60 flex items-center justify-center shrink-0">🤖</div>
+        <div class="flex-1 leading-7 text-[15px]">${html}</div>`;
+      elThread.appendChild(wrap);
+    }
+
+    // AJAX submit (composer)
+    if (elForm) elForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = (elText.value || "").trim();
+      if (!text) return;
+      appendUser(text);
+      elText.value = ""; elText.style.height = "auto"; scrollBottom();
+
+      elTyping.classList.remove('hidden');
+      try {
+        const res = await fetch(elForm.action, {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "X-Requested-With":"XMLHttpRequest", "X-CSRFToken": csrftoken },
+          body: JSON.stringify({ message: text })
         });
+        const data = await res.json();
+        appendAssistant(data.reply_html || "Sorry, no response.");
+      } catch (err) {
+        appendAssistant("⚠️ Error contacting server.");
+        console.error(err);
+      } finally {
+        elTyping.classList.add('hidden'); scrollBottom();
       }
+    });
 
-      // LOGOS
-      if (logoMain)    logoMain.src    = isLight ? "{% static 'images/logo-light.png' %}" : "{% static 'images/logo-dark.png' %}";
-      if (logoSidebar) logoSidebar.src = isLight ? "{% static 'images/logo-light.png' %}" : "{% static 'images/logo-dark.png' %}";
+    // Landing form (same AJAX) then reveal sticky composer
+    if (landing) landing.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = (landingIn.value || "").trim();
+      if (!text) return;
 
-      // INPUT SHELL (bg + border) and TEXTAREA color/placeholder
-      if (inputShell) {
-        inputShell.classList.toggle('bg-surface-card', !isLight);
-        inputShell.classList.toggle('border-surface-border', !isLight);
-        inputShell.classList.toggle('bg-white', isLight);
-        inputShell.classList.toggle('border-neutral-200', isLight);
+      // Show conversation UI
+      landing.closest('.min-h-[50vh]')?.remove();
+      document.getElementById('composer')?.classList.remove('hidden');
+
+      appendUser(text);
+      scrollBottom();
+
+      elTyping.classList.remove('hidden');
+      try {
+        const res = await fetch(landing.action, {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "X-Requested-With":"XMLHttpRequest", "X-CSRFToken": csrftoken },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        appendAssistant(data.reply_html || "Sorry, no response.");
+      } catch (err) {
+        appendAssistant("⚠️ Error contacting server.");
+        console.error(err);
+      } finally {
+        elTyping.classList.add('hidden'); scrollBottom();
       }
-      if (landingIn) {
-        landingIn.classList.toggle('text-neutral-100', !isLight);
-        landingIn.classList.toggle('text-neutral-900', isLight);
+    });
 
-        // placeholder tweak via inline style to avoid Tailwind specificity fights
-        landingIn.style.setProperty('--ph', isLight ? '#6b7280' : '#9ca3af'); // slate-500 / 400
-        landingIn.style.color = isLight ? '#111827' : '#f5f5f5';
-      }
+    // Sidebar toggle
+    openSb?.addEventListener('click', ()=> sidebar?.classList.toggle('hidden'));
+
+    // Theme toggle + logo swap + text/input colors
+    function applyTheme(theme){
+      const isDark = theme === 'dark';
+      // swap all logo pairs
+      logoPairs.forEach(([darkId, lightId]) => {
+        const d = document.getElementById(darkId);
+        const l = document.getElementById(lightId);
+        if (d && l) { d.classList.toggle('hidden', !isDark); l.classList.toggle('hidden', isDark); }
+      });
+      // adjust landing textarea text color for readability
+      if (landingIn) landingIn.style.color = isDark ? 'rgba(255,255,255,0.92)' : '#0f172a';
     }
 
-    function applyTheme(theme) {
-      root.dataset.theme = theme;
-      setThemeClasses(theme === 'light');
-      localStorage.setItem("leetai-theme", theme);
-    }
-
-    // init theme
-    applyTheme(localStorage.getItem("leetai-theme") || 'dark');
-
-    // toggle
-    function toggleTheme() {
+    function toggleTheme(){
       const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      localStorage.setItem("leetai-theme", next);
       applyTheme(next);
     }
+
+    // initial
+    applyTheme(root.dataset.theme || 'dark');
     tBtns.forEach(b => b.addEventListener('click', toggleTheme));
-    openSidebarBtn?.addEventListener('click', () => sidebar?.classList.toggle('hidden'));
-
-    // --- INPUT behaviors ---
-    if (landingIn) {
-      // Enter = submit, Shift+Enter = newline
-      landingIn.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          landingIn.form.requestSubmit();
-        }
-      });
-
-      // auto-resize (no scrollbar)
-      const fit = () => {
-        landingIn.style.height = '0px';
-        const h = Math.min(landingIn.scrollHeight, 220);
-        landingIn.style.height = h + 'px';
-      };
-      landingIn.addEventListener('input', fit);
-      // set initial height
-      fit();
-    }
   </script>
 </body>
 </html>
