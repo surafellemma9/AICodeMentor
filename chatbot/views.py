@@ -97,12 +97,9 @@ def diag(request):
 
 # ---------- ChatGPT-style page ----------
 def chat_page(request):
-    """
-    Render the main chat page with the running transcript.
-    Template: templates/chatbot/chat.html
-    """
-    messages = _get_messages_from_session(request)
+    messages = request.session.setdefault("messages", [])
     return render(request, "chatbot/chat.html", {"messages": messages})
+
 
 def new_chat(request):
     request.session["messages"] = []
