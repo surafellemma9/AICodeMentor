@@ -33,6 +33,3 @@ http://127.0.0.1:8000/chatbot/
 OpenRouther API key:
 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
 
-Gemini API key
-
-AIzaSyA8HzaWCTaVl8H5RAAwSRb7TYpDCRrcmic
