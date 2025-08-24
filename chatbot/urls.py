@@ -1,14 +1,10 @@
-# chatbot/urls.py
 from django.urls import path
-
-from . import views
+from . import views as cb
 
 app_name = "chatbot"
 
 urlpatterns = [
-    path("", views.form_view, name="chatbot_home"),
-    path("ask/", views.submit_chat, name="ask"),
-    path("new/", views.new_chat, name="new"),
-    
-
+    path("", cb.chat_page, name="chatbot_home"),
+    path("new/", cb.new_chat, name="chatbot_new"),
+    path("ask/", cb.submit_chat, name="chatbot_ask"),
 ]

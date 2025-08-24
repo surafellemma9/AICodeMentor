@@ -96,13 +96,11 @@ def diag(request):
 
 
 # ---------- ChatGPT-style page ----------
+# 1) Render the template you actually have
 def chat_page(request):
-    """
-    Render the main chat page with the running transcript.
-    Template: templates/chatbot/chat.html
-    """
     messages = _get_messages_from_session(request)
-    return render(request, "chatbot/chat.html", {"messages": messages})
+    return render(request, "chatbot/form.html", {"messages": messages})
+
 
 def new_chat(request):
     request.session["messages"] = []
@@ -124,7 +122,7 @@ def submit_chat(request):
     Keeps a running transcript in session for the ChatGPT-like UI.
     """
     if request.method != "POST":
-        return redirect("chatbot:chat")  # make sure your urls.py names this route
+        return redirect("chatbot:chatbot_home")  # make sure your urls.py names this route
 
     # Detect AJAX
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
@@ -144,7 +142,7 @@ def submit_chat(request):
         if is_ajax:
             return JsonResponse({"error": "Please enter a message."}, status=400)
         _append_message(request, "assistant", "Please enter a message.")
-        return redirect("chatbot:chat")
+        return redirect("chatbot:chatbot_home")
 
     # Add user message to transcript
     _append_message(request, "user", question)
@@ -158,7 +156,7 @@ def submit_chat(request):
         _append_message(request, "assistant", reply)
         if is_ajax:
             return JsonResponse({"reply_html": escape(reply).replace("\n", "<br>")})
-        return redirect("chatbot:chat")
+        return redirect("chatbot:chatbot_home")
 
     url = p["url"]
     headers = p["headers"](key, request)
@@ -212,4 +210,4 @@ def submit_chat(request):
         return JsonResponse({"reply_html": escape(reply).replace("\n", "<br>")})
 
     # Non-AJAX: go back to the chat page which will render the transcript
-    return redirect("chatbot:chat")
+    return redirect("chatbot:chatbot_home")

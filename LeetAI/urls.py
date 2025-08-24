@@ -6,9 +6,9 @@ from django.views.generic import RedirectView
 urlpatterns = [
     path("admin/", admin.site.urls),
 
-    # Chatbot app routes
-    path("chatbot/", include("chatbot.urls")),
+    # Chatbot app (namespaced)
+    path("chatbot/", include(("chatbot.urls", "chatbot"), namespace="chatbot")),
 
-    # Redirect the root URL ("/") to the chatbot home
-    path("", RedirectView.as_view(url="/chatbot/", permanent=False)),
+    # Redirect root "/" to chatbot home by route name (safer than hardcoding URL)
+    path("", RedirectView.as_view(pattern_name="chatbot:chatbot_home", permanent=False)),
 ]
