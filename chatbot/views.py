@@ -43,6 +43,14 @@ PROVIDERS = {
             "X-Title": "LeetAI",
         },
     },
+
+    "gemini": {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+    "key_env": "GEMINI_API_KEY",
+    "default_model": "gemini-1.5-flash",  # or gemini-1.5-pro
+    "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
+},
+
 }
 
 
@@ -89,9 +97,12 @@ def diag(request):
 
 # ---------- ChatGPT-style page ----------
 def chat_page(request):
-    messages = request.session.setdefault("messages", [])
+    """
+    Render the main chat page with the running transcript.
+    Template: templates/chatbot/chat.html
+    """
+    messages = _get_messages_from_session(request)
     return render(request, "chatbot/chat.html", {"messages": messages})
-
 
 def new_chat(request):
     request.session["messages"] = []
