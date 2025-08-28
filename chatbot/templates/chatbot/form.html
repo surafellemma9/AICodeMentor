@@ -8,34 +8,48 @@
 
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+
   <script>
-    // Persist theme
+    // Persist theme across reloads
     (() => {
       const saved = localStorage.getItem("leetai-theme");
       if (saved) document.documentElement.dataset.theme = saved;
     })();
-
-    // Tailwind theme tokens
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            surface: { DEFAULT: "#111214", card: "#1f2024", border: "#292a2f" }
-          },
-          maxWidth: { chat: "48rem" },
-          boxShadow: { card: "0 0 0 1px rgba(255,255,255,0.03), 0 8px 24px rgba(0,0,0,0.35)" }
-        }
-      }
-    }
   </script>
+
+  <!-- Theme tokens via CSS variables so toggling data-theme updates the whole UI -->
   <style>
+    :root[data-theme="dark"] {
+      --surface: #111214;
+      --card: #1f2024;
+      --border: #292a2f;
+      --text: #e5e7eb;       /* neutral-200 */
+      --muted: #9ca3af;      /* neutral-400/500 */
+      --chip: rgba(255,255,255,0.03);
+    }
+    :root[data-theme="light"] {
+      --surface: #f8fafc;    /* slate-50 */
+      --card: #ffffff;
+      --border: #e5e7eb;     /* slate-200 */
+      --text: #0f172a;       /* slate-900 */
+      --muted: #64748b;      /* slate-500 */
+      --chip: rgba(15,23,42,0.03);
+    }
+    .bg-surface { background-color: var(--surface) !important; }
+    .bg-surface-card { background-color: var(--card) !important; }
+    .border-surface-border { border-color: var(--border) !important; }
+    .text-body { color: var(--text) !important; }
+    .placeholder-muted::placeholder { color: var(--muted) !important; }
+    .muted { color: var(--muted) !important; }
+    .chip { background: var(--chip); }
+
     pre { background:#0e0f12; border:1px solid #26272d; border-radius:.75rem; padding:.9rem 1rem; overflow:auto }
     code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace }
     #scroll { scroll-behavior:smooth }
   </style>
 </head>
 
-<body class="h-screen bg-surface text-neutral-100 antialiased">
+<body class="h-screen bg-surface text-body antialiased">
   <div class="h-full flex">
     <!-- Sidebar -->
     <aside id="sidebar" class="hidden md:flex w-72 shrink-0 flex-col border-r border-surface-border bg-surface">
@@ -56,17 +70,17 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <a href="{% url 'chatbot:chatbot_new' %}" class="inline-flex items-center justify-center rounded-md border border-surface-border px-3 py-2 text-sm hover:bg-surface/60">
+          <a href="{% url 'chatbot:chatbot_new' %}" class="inline-flex items-center justify-center rounded-md border border-surface-border px-3 py-2 text-sm hover:chip">
             + New chat
           </a>
-          <button id="toggleTheme" class="rounded-md border border-surface-border px-2 py-2 text-sm hover:bg-surface/60" title="Toggle theme">☾</button>
+          <button id="toggleTheme" class="rounded-md border border-surface-border px-2 py-2 text-sm hover:chip" title="Toggle theme">☾</button>
         </div>
       </div>
 
-      <nav class="flex-1 overflow-y-auto p-2 space-y-1 text-sm text-neutral-300">
-        <div class="px-3 py-2 text-neutral-500">No conversations yet</div>
+      <nav class="flex-1 overflow-y-auto p-2 space-y-1 text-sm muted">
+        <div class="px-3 py-2">No conversations yet</div>
       </nav>
-      <div class="p-3 text-xs text-neutral-500 border-t border-surface-border">LeetAI</div>
+      <div class="p-3 text-xs muted border-t border-surface-border">LeetAI</div>
     </aside>
 
     <!-- Main -->
@@ -88,7 +102,7 @@
             {% for m in messages %}
               {% if m.role == "assistant" %}
                 <article class="flex gap-3 items-start">
-                  <div class="h-8 w-8 rounded bg-surface/60 flex items-center justify-center shrink-0">🤖</div>
+                  <div class="h-8 w-8 rounded bg-surface-card border border-surface-border flex items-center justify-center shrink-0">🤖</div>
                   <div class="flex-1 leading-7 text-[15px]">
                     {{ m.content|safe }}
                   </div>
@@ -126,7 +140,7 @@
                   </div>
                 </div>
 
-                <!-- Single rounded input with inline Send button -->
+                <!-- Single rounded textarea with inline Send button -->
                 <div class="flex items-center gap-2">
                   <div class="relative flex-1">
                     <textarea
@@ -134,7 +148,7 @@
                       name="message"
                       rows="1"
                       placeholder="How can I help today?"
-                      class="w-full rounded-full bg-surface-card border border-surface-border px-5 py-4 pr-16 text-[15px] leading-6 placeholder:text-neutral-400 outline-none focus:border-blue-500 resize-none"
+                      class="w-full rounded-full bg-surface-card border border-surface-border px-5 py-4 pr-16 text-[15px] leading-6 placeholder-muted text-body outline-none focus:border-blue-500 resize-none"
                     ></textarea>
                     <button type="submit"
                       class="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700">
@@ -143,7 +157,7 @@
                   </div>
                 </div>
 
-                <p class="mt-3 text-xs text-neutral-500 text-center">
+                <p class="mt-3 text-xs muted text-center">
                   Enter to send • Shift+Enter for newline
                 </p>
               </form>
@@ -152,7 +166,7 @@
 
           <!-- Typing dots -->
           <div id="typing" class="hidden flex gap-3 items-center">
-            <div class="h-8 w-8 rounded bg-surface/60 flex items-center justify-center shrink-0">🤖</div>
+            <div class="h-8 w-8 rounded bg-surface-card border border-surface-border flex items-center justify-center shrink-0">🤖</div>
             <div class="inline-flex items-center gap-1 px-3 py-2 rounded-2xl bg-surface-card border border-surface-border">
               <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce [animation-delay:-0.2s]"></span>
               <span class="inline-block w-2 h-2 rounded-full bg-neutral-500 animate-bounce"></span>
@@ -164,19 +178,19 @@
 
       <!-- Composer (sticky, only when there are messages) -->
       <form id="composer" action="{% url 'chatbot:chatbot_ask' %}" method="post"
-            class="{% if not messages or messages|length == 0 %}hidden{% endif %} sticky bottom-0 left-0 right-0 px-3 md:px-6 pb-5 pt-3 border-t border-surface-border bg-gradient-to-t from-surface to-surface/60 backdrop-blur">
+            class="{% if not messages or messages|length == 0 %}hidden{% endif %} sticky bottom-0 left-0 right-0 px-3 md:px-6 pb-5 pt-3 border-t border-surface-border bg-gradient-to-t from-[var(--surface)] to-[color-mix(in oklab, var(--surface) 80%, transparent)] backdrop-blur">
         {% csrf_token %}
         <div class="mx-auto max-w-chat">
           <div class="rounded-2xl border border-surface-border bg-surface-card shadow-card">
             <div class="px-3 py-2">
               <textarea id="msg" name="message" rows="1" placeholder="Message CodeMentorAI…"
-                        class="w-full resize-none bg-transparent px-2 py-2 outline-none text-[15px] leading-6 placeholder:text-neutral-500"></textarea>
+                        class="w-full resize-none bg-transparent px-2 py-2 outline-none text-[15px] leading-6 placeholder-muted text-body"></textarea>
             </div>
             <div class="flex items-center justify-between px-2 py-2 border-t border-surface-border">
-              <div class="text-xs text-neutral-500 px-2">Shift+Enter for newline</div>
+              <div class="text-xs muted px-2">Shift+Enter for newline</div>
               <div class="flex items-center gap-2">
                 <button type="button" id="stopBtn"
-                        class="hidden text-sm rounded-md border border-surface-border px-3 py-1.5 hover:bg-surface">
+                        class="hidden text-sm rounded-md border border-surface-border px-3 py-1.5 hover:chip">
                   Stop
                 </button>
                 <button type="submit"
@@ -186,7 +200,7 @@
               </div>
             </div>
           </div>
-          <p class="mt-2 text-xs text-neutral-500 text-center">
+          <p class="mt-2 text-xs muted text-center">
             CodeMentorAI may produce inaccurate information about people, places, or facts.
           </p>
         </div>
@@ -214,11 +228,13 @@
       ['mhLogoDark','mhLogoLight']
     ];
 
-    // CSRF
-    const csrftoken = (function(){ const m = document.cookie.match(/csrftoken=([^;]+)/); return m?m[1]:"{{ csrf_token }}"; })();
+    // Helper: CSRF from hidden input (reliable for Django)
+    function getCsrfFrom(scope){
+      const node = (scope || document).querySelector('input[name=csrfmiddlewaretoken]');
+      return node ? node.value : '';
+    }
 
-    function scrollBottom(){ requestAnimationFrame(()=>{ elScroll.scrollTop = elScroll.scrollHeight; }); }
-    scrollBottom();
+    function scrollBottom(){ requestAnimationFrame(()=>{ if (elScroll) elScroll.scrollTop = elScroll.scrollHeight; }); }
 
     // Auto-resize + Enter behavior for composer
     if (elText) {
@@ -227,7 +243,7 @@
         elText.style.height = Math.min(elText.scrollHeight, 220) + 'px';
       });
       elText.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); elForm.requestSubmit(); }
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); elForm?.requestSubmit(); }
       });
     }
 
@@ -245,92 +261,132 @@
       const wrap = document.createElement('article');
       wrap.className = "flex gap-3 items-start";
       wrap.innerHTML = `
-        <div class="h-8 w-8 rounded bg-surface/60 flex items-center justify-center shrink-0">🤖</div>
+        <div class="h-8 w-8 rounded bg-surface-card border border-surface-border flex items-center justify-center shrink-0">🤖</div>
         <div class="flex-1 leading-7 text-[15px]">${html}</div>`;
       elThread.appendChild(wrap);
     }
 
-    // AJAX submit (composer)
-    if (elForm) elForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = (elText.value || "").trim();
-      if (!text) return;
-      appendUser(text);
-      elText.value = ""; elText.style.height = "auto"; scrollBottom();
-
-      elTyping.classList.remove('hidden');
-      try {
-        const res = await fetch(elForm.action, {
-          method: "POST",
-          headers: { "Content-Type":"application/json", "X-Requested-With":"XMLHttpRequest", "X-CSRFToken": csrftoken },
-          body: JSON.stringify({ message: text })
-        });
-        const data = await res.json();
-        appendAssistant(data.reply_html || "Sorry, no response.");
-      } catch (err) {
-        appendAssistant("⚠️ Error contacting server.");
-        console.error(err);
-      } finally {
-        elTyping.classList.add('hidden'); scrollBottom();
-      }
-    });
-
-    // Landing form (same AJAX) then reveal sticky composer
-    if (landing) landing.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = (landingIn.value || "").trim();
-      if (!text) return;
-
-      // Show conversation UI
-      landing.closest('.min-h-[50vh]')?.remove();
-      document.getElementById('composer')?.classList.remove('hidden');
-
-      appendUser(text);
-      scrollBottom();
-
-      elTyping.classList.remove('hidden');
-      try {
-        const res = await fetch(landing.action, {
-          method: "POST",
-          headers: { "Content-Type":"application/json", "X-Requested-With":"XMLHttpRequest", "X-CSRFToken": csrftoken },
-          body: JSON.stringify({ message: text })
-        });
-        const data = await res.json();
-        appendAssistant(data.reply_html || "Sorry, no response.");
-      } catch (err) {
-        appendAssistant("⚠️ Error contacting server.");
-        console.error(err);
-      } finally {
-        elTyping.classList.add('hidden'); scrollBottom();
-      }
-    });
-
-    // Sidebar toggle
-    openSb?.addEventListener('click', ()=> sidebar?.classList.toggle('hidden'));
-
-    // Theme toggle + logo swap + text/input colors
-    function applyTheme(theme){
-      const isDark = theme === 'dark';
-      // swap all logo pairs
-      logoPairs.forEach(([darkId, lightId]) => {
-        const d = document.getElementById(darkId);
-        const l = document.getElementById(lightId);
-        if (d && l) { d.classList.toggle('hidden', !isDark); l.classList.toggle('hidden', isDark); }
+    // ---- Landing form (first screen) ----
+    if (landing) {
+      // Enter sends, Shift+Enter newline for landing textarea, too
+      landingIn?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); landing.requestSubmit(); }
       });
-      // adjust landing textarea text color for readability
-      if (landingIn) landingIn.style.color = isDark ? 'rgba(255,255,255,0.92)' : '#0f172a';
+
+      landing.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = (landingIn.value || "").trim();
+        if (!text) return;
+
+        const csrf = getCsrfFrom(landing);
+
+        // Swap UI: remove landing block, show sticky composer
+        landing.closest('.min-h-[50vh]')?.remove();
+        document.getElementById('composer')?.classList.remove('hidden');
+
+        appendUser(text);
+        scrollBottom();
+        elTyping?.classList.remove('hidden');
+
+        try {
+          const res = await fetch(landing.action, {
+            method: "POST",
+            headers: {
+              "Content-Type":"application/json",
+              "X-Requested-With":"XMLHttpRequest",
+              "X-CSRFToken": csrf
+            },
+            body: JSON.stringify({ message: text })
+          });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+          appendAssistant(data.reply_html || "Sorry, no response.");
+        } catch (err) {
+          // Fallback to native POST if AJAX fails
+          const f = document.createElement('form');
+          f.method = "POST";
+          f.action = landing.action;
+          f.innerHTML = `
+            <input type="hidden" name="csrfmiddlewaretoken" value="${csrf}">
+            <input type="hidden" name="message" value="${text.replace(/"/g,"&quot;")}">
+          `;
+          document.body.appendChild(f);
+          f.submit();
+          return;
+        } finally {
+          elTyping?.classList.add('hidden');
+          scrollBottom();
+        }
+      });
     }
 
+    // ---- Sticky composer (after you have messages) ----
+    if (elForm && elText) {
+      elForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = (elText.value || "").trim();
+        if (!text) return;
+
+        const csrf = getCsrfFrom(elForm);
+        appendUser(text);
+        elText.value = ""; elText.style.height = "auto"; scrollBottom();
+        elTyping?.classList.remove('hidden');
+
+        try {
+          const res = await fetch(elForm.action, {
+            method: "POST",
+            headers: {
+              "Content-Type":"application/json",
+              "X-Requested-With":"XMLHttpRequest",
+              "X-CSRFToken": csrf
+            },
+            body: JSON.stringify({ message: text })
+          });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+          appendAssistant(data.reply_html || "Sorry, no response.");
+        } catch (err) {
+          // Fallback to native POST
+          const f = document.createElement('form');
+          f.method = "POST";
+          f.action = elForm.action;
+          f.innerHTML = `
+            <input type="hidden" name="csrfmiddlewaretoken" value="${csrf}">
+            <input type="hidden" name="message" value="${text.replace(/"/g,"&quot;")}">
+          `;
+          document.body.appendChild(f);
+          f.submit();
+          return;
+        } finally {
+          elTyping?.classList.add('hidden');
+          scrollBottom();
+        }
+      });
+    }
+
+    // Sidebar toggle
+    document.getElementById('openSidebar')?.addEventListener('click', ()=> sidebar?.classList.toggle('hidden'));
+
+    // Theme toggle + logo swap
+    function applyTheme(theme){
+      const isDark = theme === 'dark';
+      // swap all logos
+      [['lgLogoDark','lgLogoLight'], ['sbLogoDark','sbLogoLight'], ['mhLogoDark','mhLogoLight']].forEach(([dId,lId])=>{
+        const d = document.getElementById(dId), l = document.getElementById(lId);
+        if (d && l) { d.classList.toggle('hidden', !isDark); l.classList.toggle('hidden', isDark); }
+      });
+    }
     function toggleTheme(){
-      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      const next = (root.dataset.theme === 'dark') ? 'light' : 'dark';
       root.dataset.theme = next;
       localStorage.setItem("leetai-theme", next);
       applyTheme(next);
     }
-
-    // initial
     applyTheme(root.dataset.theme || 'dark');
     tBtns.forEach(b => b.addEventListener('click', toggleTheme));
+
+    // Initial scroll bottom
+    scrollBottom();
   </script>
 </body>
 </html>
