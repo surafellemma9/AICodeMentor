@@ -1,3 +1,4 @@
+
 {% load static %}
 <!doctype html>
 <html>
@@ -34,7 +35,7 @@
 
   <div id="error" class="error" style="display:none;"></div>
 
-  <!-- Plain form fallback (server accepts both form and AJAX) -->
+  <!-- Plain form fallback (server will accept both form and AJAX) -->
   <form id="chat-form" action="{% url 'chatbot:submit_chat' %}" method="post">
     {% csrf_token %}
     <textarea id="message" name="message" placeholder="Type your message… (Shift+Enter for newline)"></textarea>
