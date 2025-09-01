@@ -11,7 +11,7 @@ from django.utils.html import escape
 
 logger = logging.getLogger(__name__)
 
-# ----- Provider catalog (OpenAI-compatible /chat/completions) -----
+# ----- Provider catalog (OpenAI-compatible /chat/completionsss) -----
 PROVIDERS = {
     "deepseek": {
         "url": "https://api.deepseek.com/chat/completions",
