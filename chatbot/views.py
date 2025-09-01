@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import uuid
 
 import requests
 from django.conf import settings
@@ -11,12 +12,12 @@ from django.utils.html import escape
 
 logger = logging.getLogger(__name__)
 
-# ----- Provider catalog (OpenAI-compatible /chat/completionsss) -----
+# ----- Provider catalog (OpenAI-compatible /chat/completions) -----
 PROVIDERS = {
     "deepseek": {
         "url": "https://api.deepseek.com/chat/completions",
         "key_env": "DEEPSEEK_API_KEY",
-        "default_model": "deepseek-chat",  # or "deepseek-reasoner"
+        "default_model": "deepseek-chat",
         "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
     },
     "groq": {
@@ -31,7 +32,6 @@ PROVIDERS = {
         "default_model": "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
         "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
     },
-    # Optional: OpenRouter for easy switching
     "openrouter": {
         "url": "https://openrouter.ai/api/v1/chat/completions",
         "key_env": "OPENROUTER_API_KEY",
@@ -42,34 +42,25 @@ PROVIDERS = {
             "X-Title": "LeetAI",
         },
     },
-
-    # Native OpenAI
     "openai": {
         "url": "https://api.openai.com/v1/chat/completions",
         "key_env": "OPENAI_API_KEY",
         "default_model": "gpt-4o-mini",
         "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
     },
-
     "gemini": {
-        # We'll format the full URL with ?key= later
         "url": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
         "key_env": "GEMINI_API_KEY",
         "default_model": "gemini-1.5-flash",
-        "headers": lambda key, _req: {"Content-Type": "application/json"},  # no Bearer here
+        "headers": lambda key, _req: {"Content-Type": "application/json"},
     },
 }
 
-
+# --------- Gemini adapters ----------
 def _to_gemini_contents(messages):
-    """
-    Convert OpenAI-style messages -> Gemini 'contents' list.
-    We drop 'system' into an initial instruction for the user.
-    """
     contents = []
     system_texts = [m["content"] for m in messages if m.get("role") == "system"]
     sys_prefix = ("\n".join(system_texts) + "\n") if system_texts else ""
-
     for m in messages:
         role = m.get("role")
         if role == "system":
@@ -79,18 +70,11 @@ def _to_gemini_contents(messages):
         text = m.get("content", "")
         if role == "user" and sys_prefix:
             text = sys_prefix + text
-            sys_prefix = ""  # only prepend once
-        contents.append({
-            "role": "user" if role == "user" else "model",
-            "parts": [{"text": text}],
-        })
+            sys_prefix = ""
+        contents.append({"role": "user" if role == "user" else "model", "parts": [{"text": text}]})
     return contents
 
-
 def _parse_gemini_reply(resp_json):
-    """
-    Pull the first text part from Gemini's response.
-    """
     try:
         cands = resp_json.get("candidates") or []
         if not cands:
@@ -103,82 +87,123 @@ def _parse_gemini_reply(resp_json):
     except Exception:
         return ""
 
+# --------- Provider selection ----------
 def _select_provider() -> str:
     name = os.environ.get("LLM_PROVIDER", "openai").lower()
-    if name not in PROVIDERS:
-        logger.warning("Unknown LLM_PROVIDER=%s; falling back to openai", name)
-        name = "openai"
-    return name
-
-
+    return name if name in PROVIDERS else "openai"
 
 def _get_api_key(var_name: str) -> str:
-    """Read API key from env/settings and strip stray whitespace/newlines/quotes."""
     raw = os.environ.get(var_name) or getattr(settings, var_name, None) or ""
     return str(raw).strip().strip('"').strip("'")
 
+# --------- Conversation helpers (session) ----------
+def _ensure_conversations(request):
+    """Ensure session has a conversations list and a current ID.
+       Migrate old 'messages' if present."""
+    convos = request.session.get("conversations")
+    if not convos:
+        convos = []
+        old = request.session.get("messages", [])
+        cid = uuid.uuid4().hex
+        convos.append({"id": cid, "title": "New conversation", "messages": old})
+        request.session["conversations"] = convos
+        request.session["current_convo_id"] = cid
+        request.session.modified = True
+    if not request.session.get("current_convo_id"):
+        request.session["current_convo_id"] = convos[0]["id"]
+        request.session.modified = True
+    return convos
 
-def _get_messages_from_session(request):
-    """Fetch running chat transcript from session."""
-    return request.session.setdefault("messages", [])
+def _get_conversations_list(request):
+    return [{"id": c["id"], "title": c.get("title") or "New conversation"} for c in _ensure_conversations(request)]
 
+def _current_convo(request):
+    convos = _ensure_conversations(request)
+    cid = request.session.get("current_convo_id")
+    for c in convos:
+        if c["id"] == cid:
+            return c
+    request.session["current_convo_id"] = convos[0]["id"]
+    request.session.modified = True
+    return convos[0]
 
-def _append_message(request, role: str, content: str):
-    msgs = _get_messages_from_session(request)
-    msgs.append({"role": role, "content": content})
+def _set_current_convo(request, convo_id: str):
+    convos = _ensure_conversations(request)
+    for c in convos:
+        if c["id"] == convo_id:
+            request.session["current_convo_id"] = convo_id
+            request.session.modified = True
+            return c
+    return _current_convo(request)
+
+def _new_convo(request):
+    convos = _ensure_conversations(request)
+    cid = uuid.uuid4().hex
+    convo = {"id": cid, "title": "New conversation", "messages": []}
+    convos.append(convo)
+    request.session["current_convo_id"] = cid
+    request.session.modified = True
+    return convo
+
+def _append_current_message(request, role: str, content: str):
+    convo = _current_convo(request)
+    convo["messages"].append({"role": role, "content": content})
     request.session.modified = True
 
+def _maybe_set_title_from_first_user_msg(convo):
+    if convo.get("title") and convo["title"] != "New conversation":
+        return
+    # first non-empty user message -> title
+    for m in convo["messages"]:
+        if m.get("role") == "user":
+            text = " ".join(m.get("content", "").split())
+            if text:
+                title = text[:60]
+                convo["title"] = title
+                return
 
+# --------- Simple views ----------
 def ping(_request):
     return HttpResponse("chatbot pong")
 
-
 def diag(request):
-    """Quick diagnostics: which provider/model and whether a key is present."""
     name = _select_provider()
     p = PROVIDERS[name]
     key_ok = bool(_get_api_key(p["key_env"]))
-    return JsonResponse(
+    return JsonResponse({"provider": name, "model": os.environ.get("LLM_MODEL", p["default_model"]), "has_api_key": key_ok})
+
+# ---------- Pages ----------
+def chat_page(request, convo_id: str | None = None):
+    if convo_id:
+        _set_current_convo(request, convo_id)
+    convo = _current_convo(request)
+    return render(
+        request,
+        "chatbot/form.html",
         {
-            "provider": name,
-            "model": os.environ.get("LLM_MODEL", p["default_model"]),
-            "has_api_key": key_ok,
-        }
+            "messages": convo["messages"],
+            "conversations": _get_conversations_list(request),
+            "current_id": convo["id"],
+        },
     )
 
-
-# ---------- ChatGPT-style page ----------
-def chat_page(request):
-    messages = _get_messages_from_session(request)
-    return render(request, "chatbot/form.html", {"messages": messages})
-
-
 def new_chat(request):
-    request.session["messages"] = []
-    request.session.modified = True
-    return redirect("chatbot:chatbot_home")
-
+    convo = _new_convo(request)
+    return redirect("chatbot:chatbot_chat", convo_id=convo["id"])
 
 # ---------- Legacy simple form (optional) ----------
 def form_view(request):
     return render(request, "chatbot/form.html")
 
-
 # ---------- Send message to model ----------
 def submit_chat(request):
-    """
-    Handles both:
-    - Standard form POST (message in request.POST['message']) -> redirect back to chat page
-    - AJAX POST with JSON body {"message": "..."} -> returns JSON {"reply_html": "..."}
-    Keeps a running transcript in session for the ChatGPT-like UI.
-    """
     if request.method != "POST":
-        return redirect("chatbot:chatbot_home")  # make sure your urls.py names this route
+        return redirect("chatbot:chatbot_home")
 
-    # Detect AJAX
+    # AJAX?
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
 
-    # Read message from POST or JSON
+    # Read message
     question = ""
     if request.content_type and "application/json" in request.content_type:
         try:
@@ -190,13 +215,16 @@ def submit_chat(request):
         question = (request.POST.get("message") or "").strip()
 
     if not question:
+        msg = "Please enter a message."
+        _append_current_message(request, "assistant", msg)
         if is_ajax:
-            return JsonResponse({"error": "Please enter a message."}, status=400)
-        _append_message(request, "assistant", "Please enter a message.")
+            return JsonResponse({"error": msg}, status=400)
         return redirect("chatbot:chatbot_home")
 
-    # Add user message to transcript
-    _append_message(request, "user", question)
+    # Append user message
+    _append_current_message(request, "user", question)
+    convo = _current_convo(request)
+    _maybe_set_title_from_first_user_msg(convo)
 
     provider_name = _select_provider()
     p = PROVIDERS[provider_name]
@@ -204,41 +232,31 @@ def submit_chat(request):
     key = _get_api_key(p["key_env"])
     if not key:
         reply = f"{provider_name} API key is missing. Set {p['key_env']} in Render → Environment."
-        _append_message(request, "assistant", reply)
+        _append_current_message(request, "assistant", reply)
         if is_ajax:
             return JsonResponse({"reply_html": escape(reply).replace("\n", "<br>")})
         return redirect("chatbot:chatbot_home")
 
     model = (os.environ.get("LLM_MODEL") or p["default_model"]).strip()
-    transcript = _get_messages_from_session(request)[-20:]
+
+    transcript = convo["messages"][-20:]
     messages_payload = [{"role": "system", "content": "You are a helpful coding mentor."}] + transcript
 
-    provider_name = _select_provider()
-
     if provider_name == "gemini":
-        # Build Gemini request
         base = PROVIDERS["gemini"]["url"].format(model=model)
         api_key = _get_api_key(PROVIDERS["gemini"]["key_env"])
         url = f"{base}?key={api_key}"
         headers = {"Content-Type": "application/json"}
-        payload = {
-            "contents": _to_gemini_contents(messages_payload),
-            # Optional: safetySettings, generationConfig, tools, etc.
-        }
+        payload = {"contents": _to_gemini_contents(messages_payload)}
     else:
-        # OpenAI-compatible providers (deepseek, groq, together, openrouter, openai)
         url = PROVIDERS[provider_name]["url"]
         headers = PROVIDERS[provider_name]["headers"](_get_api_key(PROVIDERS[provider_name]["key_env"]), request)
         headers["Content-Type"] = "application/json"
-        payload = {
-            "model": model,
-            "messages": messages_payload,
-        }
+        payload = {"model": model, "messages": messages_payload}
 
     try:
         r = requests.post(url, headers=headers, json=payload, timeout=60)
 
-        # Auth/billing handling
         if r.status_code in (401, 403):
             reply = f"{provider_name} rejected the key (HTTP {r.status_code}). Verify the key and referer/domain settings."
         elif r.status_code == 402:
@@ -267,12 +285,8 @@ def submit_chat(request):
         logger.exception("submit_chat failed (provider=%s)", provider_name)
         reply = "Unexpected error contacting model. Please try again."
 
-    # Add assistant reply to transcript
-    _append_message(request, "assistant", reply)
+    _append_current_message(request, "assistant", reply)
 
     if is_ajax:
-        # Return simple HTML (you can switch to Markdown->HTML if desired)
         return JsonResponse({"reply_html": escape(reply).replace("\n", "<br>")})
-
-    # Non-AJAX: go back to the chat page which will render the transcript
     return redirect("chatbot:chatbot_home")
