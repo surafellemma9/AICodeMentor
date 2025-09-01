@@ -22,7 +22,6 @@ PROVIDERS = {
     "groq": {
         "url": "https://api.groq.com/openai/v1/chat/completions",
         "key_env": "GROQ_API_KEY",
-        # You can override via env LLM_MODEL if this default changes.
         "default_model": "llama-3.1-70b-versatile",
         "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
     },
@@ -44,16 +43,23 @@ PROVIDERS = {
         },
     },
 
-"gemini": {
-    # We'll format the full URL with ?key= later
-    "url": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-    "key_env": "GEMINI_API_KEY",
-    "default_model": "gemini-1.5-flash",
-    "headers": lambda key, _req: {"Content-Type": "application/json"},  # no Bearer here
-},
+    # Native OpenAI
+    "openai": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "key_env": "OPENAI_API_KEY",
+        "default_model": "gpt-4o-mini",
+        "headers": lambda key, _req: {"Authorization": f"Bearer {key}"},
+    },
 
-
+    "gemini": {
+        # We'll format the full URL with ?key= later
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+        "key_env": "GEMINI_API_KEY",
+        "default_model": "gemini-1.5-flash",
+        "headers": lambda key, _req: {"Content-Type": "application/json"},  # no Bearer here
+    },
 }
+
 
 def _to_gemini_contents(messages):
     """
@@ -98,11 +104,10 @@ def _parse_gemini_reply(resp_json):
         return ""
 
 
-
 def _select_provider() -> str:
-    """Pick provider via env; default to deepseek."""
-    name = os.environ.get("LLM_PROVIDER", "deepseek").lower()
-    return name if name in PROVIDERS else "deepseek"
+    """Pick provider via env; default to openai."""
+    name = os.environ.get("LLM_PROVIDER", "openai").lower()
+    return name if name in PROVIDERS else "openai"
 
 
 def _get_api_key(var_name: str) -> str:
@@ -141,7 +146,6 @@ def diag(request):
 
 
 # ---------- ChatGPT-style page ----------
-# 1) Render the template you actually have
 def chat_page(request):
     messages = _get_messages_from_session(request)
     return render(request, "chatbot/form.html", {"messages": messages})
@@ -210,17 +214,17 @@ def submit_chat(request):
     provider_name = _select_provider()
 
     if provider_name == "gemini":
-    # Build Gemini request
+        # Build Gemini request
         base = PROVIDERS["gemini"]["url"].format(model=model)
         api_key = _get_api_key(PROVIDERS["gemini"]["key_env"])
         url = f"{base}?key={api_key}"
         headers = {"Content-Type": "application/json"}
         payload = {
             "contents": _to_gemini_contents(messages_payload),
-        # Optional: safetySettings, generationConfig, tools, etc.
+            # Optional: safetySettings, generationConfig, tools, etc.
         }
     else:
-    # OpenAI-compatible providers (deepseek, groq, together, openrouter)
+        # OpenAI-compatible providers (deepseek, groq, together, openrouter, openai)
         url = PROVIDERS[provider_name]["url"]
         headers = PROVIDERS[provider_name]["headers"](_get_api_key(PROVIDERS[provider_name]["key_env"]), request)
         headers["Content-Type"] = "application/json"
@@ -228,7 +232,6 @@ def submit_chat(request):
             "model": model,
             "messages": messages_payload,
         }
-
 
     try:
         r = requests.post(url, headers=headers, json=payload, timeout=60)
@@ -255,7 +258,6 @@ def submit_chat(request):
                 choice0 = (data.get("choices") or [{}])[0]
                 reply = (choice0.get("message") or {}).get("content") or choice0.get("text") or ""
                 reply = (reply or "").strip() or "The model returned an empty reply."
-
 
     except requests.Timeout:
         reply = "The model request timed out. Please try again."
