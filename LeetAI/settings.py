@@ -14,6 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Core / Security
 # ------------------------------------------------------------------------------
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-insecure-only")
+
 # On Render we set env var RENDER=true; that turns DEBUG off in prod.
 DEBUG = "RENDER" not in os.environ
 
@@ -40,9 +41,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
 
-    # Tailwind integration (safe before theme exists)
+    # Tailwind integration
     "tailwind",
-    # DO NOT add "theme" yet — run `manage.py tailwind init` first, then add it.
     "theme",
 
     # Important: put this BEFORE 'django.contrib.staticfiles'
@@ -149,9 +149,12 @@ SITE_URL = os.environ.get(
     f"https://{RENDER_EXTERNAL_HOSTNAME}" if RENDER_EXTERNAL_HOSTNAME else "http://localhost:8000",
 )
 
-LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openrouter")
-LLM_MODEL = os.environ.get("LLM_MODEL", "openai/gpt-4o-mini")
+# Default to OpenAI now
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai")
+LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4o-mini")
 
+# Provider keys (read by your views)
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY")
