@@ -103,11 +103,13 @@ def _parse_gemini_reply(resp_json):
     except Exception:
         return ""
 
-
 def _select_provider() -> str:
-    """Pick provider via env; default to openai."""
     name = os.environ.get("LLM_PROVIDER", "openai").lower()
-    return name if name in PROVIDERS else "openai"
+    if name not in PROVIDERS:
+        logger.warning("Unknown LLM_PROVIDER=%s; falling back to openai", name)
+        name = "openai"
+    return name
+
 
 
 def _get_api_key(var_name: str) -> str:
